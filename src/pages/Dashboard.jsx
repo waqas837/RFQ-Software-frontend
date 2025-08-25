@@ -6,6 +6,14 @@ import {
   ArrowTrendingUpIcon,
   ClockIcon
 } from '@heroicons/react/24/outline'
+import { 
+  RFQStatusChart, 
+  MonthlyTrendChart, 
+  CategoryDistributionChart,
+  BudgetVsActualChart,
+  SupplierPerformanceChart,
+  SavingsChart 
+} from '../components/Charts'
 
 const Dashboard = () => {
   const stats = [
@@ -61,6 +69,22 @@ const Dashboard = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <RFQStatusChart />
+        <MonthlyTrendChart />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <CategoryDistributionChart />
+        <BudgetVsActualChart />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <SupplierPerformanceChart />
+        <SavingsChart />
       </div>
 
       {/* Main content grid */}

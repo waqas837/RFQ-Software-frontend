@@ -437,13 +437,247 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 opacity-30"></div>
+      {/* How It Works Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-50 border border-blue-200 mb-6">
+              <RocketLaunchIcon className="h-4 w-4 text-blue-600 mr-2" />
+              <span className="text-sm font-medium text-blue-700">Simple Process</span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              How RFQ Pro
+              <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent"> Works</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Get started in minutes with our simple 4-step process
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center group">
+              <div className="relative mb-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <DocumentTextIcon className="h-10 w-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Create RFQ</h3>
+              <p className="text-gray-600">Use our AI-powered templates to create professional RFQs in minutes</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="relative mb-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <UserGroupIcon className="h-10 w-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Invite Suppliers</h3>
+              <p className="text-gray-600">Send invitations to your supplier network or discover new ones</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="relative mb-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <ChartBarIcon className="h-10 w-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Compare Bids</h3>
+              <p className="text-gray-600">Analyze and compare bids with our advanced comparison tools</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="relative mb-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                  <CheckIcon className="h-10 w-10 text-white" />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">4</div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Award & Execute</h3>
+              <p className="text-gray-600">Award the best bid and generate purchase orders automatically</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-green-50 border border-green-200 mb-6">
+              <CurrencyDollarIcon className="h-4 w-4 text-green-600 mr-2" />
+              <span className="text-sm font-medium text-green-700">Transparent Pricing</span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Simple,
+              <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent"> Transparent Pricing</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Choose the plan that fits your organization's needs. All plans include our core features.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Starter</h3>
+                <div className="text-4xl font-bold text-gray-900 mb-2">$99</div>
+                <div className="text-gray-600">per month</div>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Up to 10 RFQs per month</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Basic analytics</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Email support</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Standard templates</span>
+                </li>
+              </ul>
+              <Link
+                to="/register"
+                className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors text-center block"
+              >
+                Get Started
+              </Link>
+            </div>
+            
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-8 shadow-2xl border-2 border-blue-200 relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold">Most Popular</span>
+              </div>
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Professional</h3>
+                <div className="text-4xl font-bold text-gray-900 mb-2">$299</div>
+                <div className="text-gray-600">per month</div>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Unlimited RFQs</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Advanced analytics</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Priority support</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Custom templates</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">API access</span>
+                </li>
+              </ul>
+              <Link
+                to="/register"
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center block"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Enterprise</h3>
+                <div className="text-4xl font-bold text-gray-900 mb-2">Custom</div>
+                <div className="text-gray-600">contact sales</div>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Everything in Professional</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Custom integrations</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Dedicated account manager</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">On-premise deployment</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckIcon className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">SLA guarantees</span>
+                </li>
+              </ul>
+              <Link
+                to="/register"
+                className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-800 transition-colors text-center block"
+              >
+                Contact Sales
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-50 border border-purple-200 mb-6">
+              <SparklesIcon className="h-4 w-4 text-purple-600 mr-2" />
+              <span className="text-sm font-medium text-purple-700">FAQ</span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Frequently Asked
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Questions</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Find answers to common questions about RFQ Pro
+            </p>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl p-8 shadow-lg">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">How long does it take to set up RFQ Pro?</h3>
+              <p className="text-gray-600">You can get started with RFQ Pro in under 10 minutes. Simply sign up, verify your email, and you'll be ready to create your first RFQ.</p>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-8 shadow-lg">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Can I integrate RFQ Pro with my existing systems?</h3>
+              <p className="text-gray-600">Yes! RFQ Pro offers RESTful APIs and webhooks that allow seamless integration with your ERP, CRM, and other business systems.</p>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-8 shadow-lg">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">What kind of support do you provide?</h3>
+              <p className="text-gray-600">We offer comprehensive support including email, live chat, and phone support. Enterprise customers get dedicated account managers.</p>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-8 shadow-lg">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Is my data secure?</h3>
+              <p className="text-gray-600">Absolutely. We use bank-level encryption, SOC 2 compliance, and regular security audits to ensure your data is always protected.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section - Fixed Background */}
+      <section className="py-24 bg-gradient-to-r from-blue-600 to-blue-700 relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/5"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
             Ready to Transform Your
-            <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent"> Procurement Process?</span>
+            <span className="text-blue-100"> Procurement Process?</span>
           </h2>
           <p className="text-xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
             Join thousands of companies that have already streamlined their procurement with RFQ Pro. 
@@ -452,14 +686,14 @@ const HomePage = () => {
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Link
               to="/register"
-              className="group bg-white text-gray-900 px-10 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all duration-300 transform hover:scale-105 inline-flex items-center"
+              className="group bg-white text-blue-600 px-10 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all duration-300 transform hover:scale-105 inline-flex items-center"
             >
               Start Free Trial
               <ArrowRightIcon className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               to="/login"
-              className="border-2 border-white text-white px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300"
+              className="border-2 border-white text-white px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300"
             >
               Sign In
             </Link>

@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import RFQWizard from '../components/RFQWizard'
 
 const RFQs = () => {
-  const rfqs = [
+  const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const [rfqs, setRfqs] = useState([
     { id: 1, title: 'Office Supplies RFQ', status: 'Published', date: '2024-01-15', bids: 8, budget: '$5,000' },
     { id: 2, title: 'IT Equipment Procurement', status: 'Bidding Open', date: '2024-01-14', bids: 12, budget: '$25,000' },
     { id: 3, title: 'Marketing Services', status: 'Under Evaluation', date: '2024-01-13', bids: 6, budget: '$15,000' },
     { id: 4, title: 'Facility Maintenance', status: 'Draft', date: '2024-01-12', bids: 0, budget: '$10,000' },
     { id: 5, title: 'Software Licenses', status: 'Awarded', date: '2024-01-11', bids: 4, budget: '$8,000' },
-  ]
+  ])
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -20,6 +23,18 @@ const RFQs = () => {
     }
   }
 
+  const handleCreateRFQ = (rfqData) => {
+    const newRFQ = {
+      id: rfqs.length + 1,
+      title: rfqData.title,
+      status: 'Draft',
+      date: new Date().toISOString().split('T')[0],
+      bids: 0,
+      budget: `$${rfqData.budget?.toLocaleString() || '0'}`
+    }
+    setRfqs([newRFQ, ...rfqs])
+  }
+
   return (
     <div className="p-6">
       {/* Page header */}
@@ -29,7 +44,10 @@ const RFQs = () => {
             <h1 className="text-2xl font-bold text-gray-900">RFQs</h1>
             <p className="text-gray-600">Manage your Request for Quotations</p>
           </div>
-          <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+          <button 
+            onClick={() => setIsWizardOpen(true)}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
             <PlusIcon className="h-5 w-5 mr-2" />
             Create New RFQ
           </button>
@@ -112,6 +130,13 @@ const RFQs = () => {
           </table>
         </div>
       </div>
+
+      {/* RFQ Wizard Modal */}
+      <RFQWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onSubmit={handleCreateRFQ}
+      />
     </div>
   )
 }
