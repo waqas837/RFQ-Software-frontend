@@ -1,4 +1,5 @@
 import PublicNavbar from './PublicNavbar'
+import Logo from '../Logo'
 
 const PublicLayout = ({ children }) => {
   return (
@@ -11,10 +12,8 @@ const PublicLayout = ({ children }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-6">
-                <div className="h-12 w-12 bg-gradient-to-r from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-xl">R</span>
-                </div>
-                <span className="ml-3 text-2xl font-bold">RFQ Pro</span>
+                <Logo size="large" showText={false} />
+                <span className="ml-3 text-2xl font-bold">SIMPLY PROCURE</span>
               </div>
               <p className="text-gray-400 text-lg leading-relaxed mb-8 max-w-md">
                 The complete solution for modern procurement. Streamline your RFQ process, 
@@ -55,7 +54,7 @@ const PublicLayout = ({ children }) => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 RFQ Pro. All rights reserved. | Privacy Policy | Terms of Service</p>
+            <p>&copy; 2025 SIMPLY PROCURE. All rights reserved. | Privacy Policy | Terms of Service</p>
           </div>
         </div>
       </footer>

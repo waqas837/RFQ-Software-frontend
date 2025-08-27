@@ -1,173 +1,219 @@
+import { useState, useEffect } from 'react'
 import { 
+  ChartBarIcon, 
   DocumentTextIcon, 
   UserGroupIcon, 
-  ClipboardDocumentListIcon, 
-  ShoppingCartIcon,
-  ArrowTrendingUpIcon,
-  ClockIcon
+  CurrencyDollarIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  EyeIcon,
+  PencilIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
-import { 
-  RFQStatusChart, 
-  MonthlyTrendChart, 
-  CategoryDistributionChart,
-  BudgetVsActualChart,
-  SupplierPerformanceChart,
-  SavingsChart 
-} from '../components/Charts'
+import Charts from '../components/Charts'
 
 const Dashboard = () => {
-  const stats = [
-    { name: 'Total RFQs', value: '24', change: '+12%', changeType: 'positive', icon: DocumentTextIcon },
-    { name: 'Active Suppliers', value: '156', change: '+8%', changeType: 'positive', icon: UserGroupIcon },
-    { name: 'Pending Bids', value: '18', change: '-3%', changeType: 'negative', icon: ClipboardDocumentListIcon },
-    { name: 'Purchase Orders', value: '42', change: '+15%', changeType: 'positive', icon: ShoppingCartIcon },
-  ]
+  const [stats, setStats] = useState({
+    totalRFQs: 0,
+    activeBids: 0,
+    totalSuppliers: 0,
+    totalSpend: 0
+  })
 
-  const recentRFQs = [
-    { id: 1, title: 'Office Supplies RFQ', status: 'Published', date: '2024-01-15', bids: 8 },
-    { id: 2, title: 'IT Equipment Procurement', status: 'Bidding Open', date: '2024-01-14', bids: 12 },
-    { id: 3, title: 'Marketing Services', status: 'Under Evaluation', date: '2024-01-13', bids: 6 },
-    { id: 4, title: 'Facility Maintenance', status: 'Draft', date: '2024-01-12', bids: 0 },
-  ]
+  const [recentRFQs, setRecentRFQs] = useState([])
+  const [recentBids, setRecentBids] = useState([])
 
-  const recentActivity = [
-    { id: 1, action: 'New RFQ created', item: 'Office Supplies RFQ', time: '2 hours ago' },
-    { id: 2, action: 'Bid submitted', item: 'IT Equipment Procurement', time: '4 hours ago' },
-    { id: 3, action: 'Supplier registered', item: 'Tech Solutions Inc.', time: '6 hours ago' },
-    { id: 4, action: 'Purchase order generated', item: 'Marketing Services', time: '1 day ago' },
-  ]
+  useEffect(() => {
+    // Simulate loading data
+    setStats({
+      totalRFQs: 24,
+      activeBids: 156,
+      totalSuppliers: 89,
+      totalSpend: 1250000
+    })
+
+    setRecentRFQs([
+      { id: 1, title: 'Office Supplies Q4 2024', status: 'Open', bids: 12, deadline: '2024-12-15' },
+      { id: 2, title: 'IT Equipment Procurement', status: 'Closed', bids: 8, deadline: '2024-11-30' },
+      { id: 3, title: 'Marketing Services', status: 'Draft', bids: 0, deadline: '2024-12-20' }
+    ])
+
+    setRecentBids([
+      { id: 1, supplier: 'TechCorp Solutions', rfq: 'IT Equipment Procurement', amount: 45000, status: 'Submitted' },
+      { id: 2, supplier: 'OfficeMax Pro', rfq: 'Office Supplies Q4 2024', amount: 12500, status: 'Under Review' },
+      { id: 3, supplier: 'Digital Marketing Co', rfq: 'Marketing Services', amount: 32000, status: 'Submitted' }
+    ])
+  }, [])
+
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'open':
+        return 'bg-gray-100 text-gray-800'
+      case 'closed':
+        return 'bg-gray-100 text-gray-600'
+      case 'draft':
+        return 'bg-gray-100 text-gray-700'
+      case 'submitted':
+        return 'bg-gray-100 text-gray-800'
+      case 'under review':
+        return 'bg-gray-100 text-gray-700'
+      default:
+        return 'bg-gray-100 text-gray-600'
+    }
+  }
 
   return (
-    <div className="p-6">
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's what's happening with your RFQs.</p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's what's happening with your procurement.</p>
+        </div>
+        <button className="bg-gradient-to-r from-gray-700 to-gray-900 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-300">
+          Create New RFQ
+        </button>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <stat.icon className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total RFQs</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalRFQs}</p>
             </div>
-            <div className="mt-4">
-              <span className={`inline-flex items-center text-sm font-medium ${
-                stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
-                {stat.change}
-              </span>
-              <span className="text-sm text-gray-500 ml-2">from last month</span>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <DocumentTextIcon className="w-6 h-6 text-gray-700" />
             </div>
           </div>
-        ))}
+          <div className="mt-4 flex items-center text-sm">
+            <ArrowUpIcon className="w-4 h-4 text-gray-600 mr-1" />
+            <span className="text-gray-600">12% from last month</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Active Bids</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.activeBids}</p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <ChartBarIcon className="w-6 h-6 text-gray-700" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <ArrowUpIcon className="w-4 h-4 text-gray-600 mr-1" />
+            <span className="text-gray-600">8% from last month</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Suppliers</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalSuppliers}</p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <UserGroupIcon className="w-6 h-6 text-gray-700" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <ArrowDownIcon className="w-4 h-4 text-gray-600 mr-1" />
+            <span className="text-gray-600">3% from last month</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Spend</p>
+              <p className="text-2xl font-bold text-gray-900">${(stats.totalSpend / 1000000).toFixed(1)}M</p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-lg">
+              <CurrencyDollarIcon className="w-6 h-6 text-gray-700" />
+            </div>
+          </div>
+          <div className="mt-4 flex items-center text-sm">
+            <ArrowUpIcon className="w-4 h-4 text-gray-600 mr-1" />
+            <span className="text-gray-600">15% from last month</span>
+          </div>
+        </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <RFQStatusChart />
-        <MonthlyTrendChart />
+      {/* Charts Section */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Analytics Overview</h2>
+        <Charts />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <CategoryDistributionChart />
-        <BudgetVsActualChart />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <SupplierPerformanceChart />
-        <SavingsChart />
-      </div>
-
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent RFQs */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Recent RFQs</h2>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent RFQs</h3>
+            <button className="text-gray-700 hover:text-gray-900 text-sm font-medium">View all</button>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div className="space-y-4">
             {recentRFQs.map((rfq) => (
-              <div key={rfq.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">{rfq.title}</h3>
-                    <p className="text-sm text-gray-500">{rfq.date}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      rfq.status === 'Published' ? 'bg-green-100 text-green-800' :
-                      rfq.status === 'Bidding Open' ? 'bg-blue-100 text-blue-800' :
-                      rfq.status === 'Under Evaluation' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+              <div key={rfq.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">{rfq.title}</h4>
+                  <div className="flex items-center mt-1 space-x-4 text-sm text-gray-600">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(rfq.status)}`}>
                       {rfq.status}
                     </span>
-                    <span className="text-sm text-gray-500">{rfq.bids} bids</span>
+                    <span>{rfq.bids} bids</span>
+                    <span>Due: {rfq.deadline}</span>
                   </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                    <EyeIcon className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
+        {/* Recent Bids */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Bids</h3>
+            <button className="text-gray-700 hover:text-gray-900 text-sm font-medium">View all</button>
           </div>
-          <div className="divide-y divide-gray-200">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="px-6 py-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="w-2 h-2 bg-green-400 rounded-full mt-2"></div>
+          <div className="space-y-4">
+            {recentBids.map((bid) => (
+              <div key={bid.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">{bid.supplier}</h4>
+                  <div className="flex items-center mt-1 space-x-4 text-sm text-gray-600">
+                    <span>{bid.rfq}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bid.status)}`}>
+                      {bid.status}
+                    </span>
                   </div>
-                  <div className="ml-3 flex-1">
-                    <p className="text-sm text-gray-900">
-                      <span className="font-medium">{activity.action}</span>
-                    </p>
-                    <p className="text-sm text-gray-500">{activity.item}</p>
-                    <div className="flex items-center mt-1">
-                      <ClockIcon className="h-3 w-3 text-gray-400 mr-1" />
-                      <span className="text-xs text-gray-400">{activity.time}</span>
-                    </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-gray-900">${bid.amount.toLocaleString()}</p>
+                  <div className="flex space-x-2 mt-2">
+                    <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                      <EyeIcon className="w-4 h-4" />
+                    </button>
+                    <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mt-8 bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-            <DocumentTextIcon className="h-5 w-5 mr-2" />
-            Create New RFQ
-          </button>
-          <button className="flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-            <UserGroupIcon className="h-5 w-5 mr-2" />
-            Add Supplier
-          </button>
-          <button className="flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-            <ClipboardDocumentListIcon className="h-5 w-5 mr-2" />
-            View Bids
-          </button>
-          <button className="flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-            <ShoppingCartIcon className="h-5 w-5 mr-2" />
-            Generate PO
-          </button>
         </div>
       </div>
     </div>

@@ -19,10 +19,10 @@ import {
 // RFQ Status Chart Data
 const rfqStatusData = [
   { name: 'Draft', value: 12, color: '#6B7280' },
-  { name: 'Published', value: 8, color: '#3B82F6' },
-  { name: 'In Progress', value: 15, color: '#F59E0B' },
-  { name: 'Completed', value: 23, color: '#10B981' },
-  { name: 'Cancelled', value: 3, color: '#EF4444' }
+  { name: 'Published', value: 8, color: '#4B5563' },
+  { name: 'In Progress', value: 15, color: '#374151' },
+  { name: 'Completed', value: 23, color: '#1F2937' },
+  { name: 'Cancelled', value: 3, color: '#9CA3AF' }
 ]
 
 // Monthly RFQ Trend Data
@@ -39,11 +39,11 @@ const monthlyTrendData = [
 
 // Category Distribution Data
 const categoryData = [
-  { name: 'IT Equipment', value: 35, color: '#3B82F6' },
-  { name: 'Office Supplies', value: 25, color: '#10B981' },
-  { name: 'Services', value: 20, color: '#F59E0B' },
-  { name: 'Furniture', value: 15, color: '#8B5CF6' },
-  { name: 'Materials', value: 5, color: '#EF4444' }
+  { name: 'IT Equipment', value: 35, color: '#4B5563' },
+  { name: 'Office Supplies', value: 25, color: '#6B7280' },
+  { name: 'Services', value: 20, color: '#374151' },
+  { name: 'Furniture', value: 15, color: '#1F2937' },
+  { name: 'Materials', value: 5, color: '#9CA3AF' }
 ]
 
 // Budget vs Actual Data
@@ -56,9 +56,9 @@ const budgetData = [
   { month: 'Jun', budget: 70000, actual: 68000 }
 ]
 
-export const RFQStatusChart = () => {
+const RFQStatusChart = () => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-medium text-gray-900 mb-4">RFQ Status Distribution</h3>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
@@ -83,37 +83,34 @@ export const RFQStatusChart = () => {
   )
 }
 
-export const MonthlyTrendChart = () => {
+const MonthlyTrendChart = () => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Trends</h3>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={monthlyTrendData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
-          <YAxis />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <XAxis dataKey="month" stroke="#6B7280" />
+          <YAxis stroke="#6B7280" />
           <Tooltip />
           <Legend />
           <Line 
             type="monotone" 
             dataKey="rfqs" 
-            stroke="#3B82F6" 
+            stroke="#4B5563" 
             strokeWidth={2}
-            name="RFQs"
           />
           <Line 
             type="monotone" 
             dataKey="bids" 
-            stroke="#10B981" 
+            stroke="#6B7280" 
             strokeWidth={2}
-            name="Bids"
           />
           <Line 
             type="monotone" 
             dataKey="awards" 
-            stroke="#F59E0B" 
+            stroke="#374151" 
             strokeWidth={2}
-            name="Awards"
           />
         </LineChart>
       </ResponsiveContainer>
@@ -121,51 +118,49 @@ export const MonthlyTrendChart = () => {
   )
 }
 
-export const CategoryDistributionChart = () => {
+const CategoryDistributionChart = () => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Category Distribution</h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={categoryData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <XAxis dataKey="name" stroke="#6B7280" />
+          <YAxis stroke="#6B7280" />
           <Tooltip />
-          <Bar dataKey="value" fill="#3B82F6" />
+          <Bar dataKey="value" fill="#4B5563" />
         </BarChart>
       </ResponsiveContainer>
     </div>
   )
 }
 
-export const BudgetVsActualChart = () => {
+const BudgetVsActualChart = () => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Budget vs Actual Spending</h3>
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">Budget vs Actual Spend</h3>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={budgetData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
-          <YAxis />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <XAxis dataKey="month" stroke="#6B7280" />
+          <YAxis stroke="#6B7280" />
           <Tooltip />
           <Legend />
           <Area 
             type="monotone" 
             dataKey="budget" 
             stackId="1" 
-            stroke="#3B82F6" 
-            fill="#3B82F6" 
+            stroke="#4B5563" 
+            fill="#4B5563" 
             fillOpacity={0.6}
-            name="Budget"
           />
           <Area 
             type="monotone" 
             dataKey="actual" 
             stackId="1" 
-            stroke="#10B981" 
-            fill="#10B981" 
+            stroke="#6B7280" 
+            fill="#6B7280" 
             fillOpacity={0.6}
-            name="Actual"
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -173,77 +168,16 @@ export const BudgetVsActualChart = () => {
   )
 }
 
-export const SupplierPerformanceChart = () => {
-  const supplierData = [
-    { name: 'TechCorp Inc', onTimeDelivery: 95, qualityScore: 92, costEfficiency: 88 },
-    { name: 'OfficeMax Ltd', onTimeDelivery: 88, qualityScore: 89, costEfficiency: 94 },
-    { name: 'Global Supplies', onTimeDelivery: 92, qualityScore: 85, costEfficiency: 91 },
-    { name: 'Prime Vendors', onTimeDelivery: 85, qualityScore: 90, costEfficiency: 87 },
-    { name: 'Elite Solutions', onTimeDelivery: 90, qualityScore: 93, costEfficiency: 89 }
-  ]
-
+// Default export that renders all charts in a grid
+const Charts = () => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Supplier Performance</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={supplierData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="onTimeDelivery" fill="#3B82F6" name="On-Time Delivery %" />
-          <Bar dataKey="qualityScore" fill="#10B981" name="Quality Score %" />
-          <Bar dataKey="costEfficiency" fill="#F59E0B" name="Cost Efficiency %" />
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <RFQStatusChart />
+      <MonthlyTrendChart />
+      <CategoryDistributionChart />
+      <BudgetVsActualChart />
     </div>
   )
 }
 
-export const SavingsChart = () => {
-  const savingsData = [
-    { month: 'Jan', planned: 5000, actual: 4800, savings: 200 },
-    { month: 'Feb', planned: 6000, actual: 5700, savings: 300 },
-    { month: 'Mar', planned: 5500, actual: 5200, savings: 300 },
-    { month: 'Apr', planned: 7000, actual: 6500, savings: 500 },
-    { month: 'May', planned: 6500, actual: 6100, savings: 400 },
-    { month: 'Jun', planned: 8000, actual: 7500, savings: 500 }
-  ]
-
-  return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Cost Savings Analysis</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={savingsData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line 
-            type="monotone" 
-            dataKey="planned" 
-            stroke="#6B7280" 
-            strokeWidth={2}
-            name="Planned Cost"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="actual" 
-            stroke="#EF4444" 
-            strokeWidth={2}
-            name="Actual Cost"
-          />
-          <Line 
-            type="monotone" 
-            dataKey="savings" 
-            stroke="#10B981" 
-            strokeWidth={2}
-            name="Savings"
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  )
-}
+export default Charts

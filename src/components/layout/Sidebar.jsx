@@ -1,126 +1,129 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { 
   HomeIcon, 
   DocumentTextIcon, 
-  CubeIcon, 
   UserGroupIcon, 
-  ClipboardDocumentListIcon, 
-  ChartBarIcon, 
-  DocumentChartBarIcon, 
+  ClipboardDocumentListIcon,
   ShoppingCartIcon,
-  ArrowRightOnRectangleIcon
+  ChartBarIcon,
+  Cog6ToothIcon,
+  ArrowLeftOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
+import Logo from '../Logo'
 
-const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
+const Sidebar = () => {
+  const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
-  const navigate = useNavigate()
-
-  const handleSignOut = () => {
-    // Clear authentication token
-    localStorage.removeItem('authToken')
-    // Close the sidebar on mobile
-    setSidebarOpen(false)
-    // Dispatch custom event to notify App component
-    window.dispatchEvent(new Event('authChange'))
-    // Redirect to login page
-    navigate('/login')
-  }
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'RFQs', href: '/rfqs', icon: DocumentTextIcon },
-    { name: 'Items', href: '/items', icon: CubeIcon },
-    { name: 'Suppliers', href: '/suppliers', icon: UserGroupIcon },
     { name: 'Bids', href: '/bids', icon: ClipboardDocumentListIcon },
-    { name: 'Comparison', href: '/comparison', icon: ChartBarIcon },
-    { name: 'Reports', href: '/reports', icon: DocumentChartBarIcon },
+    { name: 'Suppliers', href: '/suppliers', icon: UserGroupIcon },
     { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
+    { name: 'Reports', href: '/reports', icon: ChartBarIcon },
+    { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
   ]
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('user')
+    window.location.href = '/login'
+  }
+
+  const isActive = (href) => {
+    return location.pathname === href
+  }
 
   return (
     <>
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {/* Mobile menu button */}
+      <div className="lg:hidden">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500"
+        >
+          <span className="sr-only">Open sidebar</span>
+          {isOpen ? (
+            <XMarkIcon className="block h-6 w-6" />
+          ) : (
+            <Bars3Icon className="block h-6 w-6" />
+          )}
+        </button>
+      </div>
 
       {/* Sidebar */}
       <div className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">R</span>
-            </div>
-            <span className="ml-3 text-xl font-semibold text-gray-900">RFQ Pro</span>
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+            <Logo size="small" />
           </div>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
 
-        <nav className="mt-6 px-3">
-          <div className="space-y-1">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`
-                    group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                    ${isActive 
-                      ? 'bg-green-50 text-green-700 border-r-2 border-green-600' 
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                  `}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon 
-                    className={`
-                      mr-3 h-5 w-5 flex-shrink-0
-                      ${isActive ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}
-                    `} 
-                  />
-                  {item.name}
-                </Link>
-              )
-            })}
-          </div>
-        </nav>
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-6 space-y-2">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`
+                  flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+                  ${isActive(item.href)
+                    ? 'bg-gray-100 text-gray-900 border-r-2 border-gray-700'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }
+                `}
+                onClick={() => setIsOpen(false)}
+              >
+                <item.icon className="w-5 h-5 mr-3" />
+                {item.name}
+              </Link>
+            ))}
+          </nav>
 
-        {/* User section */}
-        <div className="absolute bottom-0 w-full p-4 border-t border-gray-200">
-          <div className="flex items-center justify-between">
+          {/* User section */}
+          <div className="p-4 border-t border-gray-200">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 font-medium text-sm">U</span>
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-gray-700">
+                    {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name?.charAt(0) : 'U'}
+                  </span>
+                </div>
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">Admin User</p>
-                <p className="text-xs text-gray-500">admin@rfqpro.com</p>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900">
+                  {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'User'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'user@example.com'}
+                </p>
               </div>
             </div>
             <button
-              onClick={handleSignOut}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded-md transition-colors"
-              title="Sign out"
+              onClick={handleLogout}
+              className="mt-3 w-full flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-200"
             >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              <ArrowLeftOnRectangleIcon className="w-5 h-5 mr-3" />
+              Sign out
             </button>
           </div>
         </div>
       </div>
+
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
     </>
   )
 }

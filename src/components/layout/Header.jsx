@@ -1,109 +1,131 @@
-import { Bars3Icon, BellIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { 
+  MagnifyingGlassIcon, 
+  BellIcon, 
+  UserCircleIcon,
+  Bars3Icon
+} from '@heroicons/react/24/outline'
+import Logo from '../Logo'
 
-const Header = ({ setSidebarOpen }) => {
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const navigate = useNavigate()
+const Header = ({ onMenuClick }) => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [notifications] = useState([
+    { id: 1, message: 'New bid received for Office Supplies RFQ', time: '2 minutes ago' },
+    { id: 2, message: 'RFQ deadline approaching: IT Equipment', time: '1 hour ago' },
+    { id: 3, message: 'Supplier TechCorp Solutions registered', time: '3 hours ago' }
+  ])
 
-  const handleSignOut = () => {
-    // Clear authentication token
-    localStorage.removeItem('authToken')
-    // Close the menu
-    setUserMenuOpen(false)
-    // Dispatch custom event to notify App component
-    window.dispatchEvent(new Event('authChange'))
-    // Redirect to login page
-    navigate('/login')
-  }
+  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
-      <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-        {/* Mobile menu button */}
-        <button
-          type="button"
-          className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <Bars3Icon className="h-6 w-6" />
-        </button>
+      <div className="flex items-center justify-between px-4 py-3 lg:px-6">
+        {/* Left side - Logo and Menu */}
+        <div className="flex items-center">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
+          
+          <div className="hidden lg:block ml-4">
+            <Logo size="small" />
+          </div>
+        </div>
 
-        {/* Search bar - hidden on mobile */}
-        <div className="hidden md:flex flex-1 max-w-lg ml-4">
-          <div className="relative w-full">
+        {/* Center - Search */}
+        <div className="flex-1 max-w-lg mx-4">
+          <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
             </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500"
-              placeholder="Search RFQs, items, suppliers..."
+              placeholder="Search RFQs, suppliers, bids..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
             />
           </div>
         </div>
 
-        {/* Right side */}
+        {/* Right side - Notifications and User */}
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md">
-            <BellIcon className="h-6 w-6" />
-          </button>
+          <div className="relative">
+            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors relative">
+              <BellIcon className="h-6 w-6" />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-gray-600 text-white text-xs rounded-full flex items-center justify-center">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+            
+            {/* Notifications dropdown */}
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+              <div className="p-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Notifications</h3>
+                <div className="space-y-3">
+                  {notifications.map((notification) => (
+                    <div key={notification.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex-shrink-0">
+                        <div className="w-2 h-2 bg-gray-600 rounded-full mt-2"></div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-900">{notification.message}</p>
+                        <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button className="w-full mt-3 text-sm text-gray-700 hover:text-gray-900 font-medium">
+                  View all notifications
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* User menu */}
           <div className="relative">
-            <button 
-              className="flex items-center space-x-2 p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md"
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-            >
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-gray-600 font-medium text-sm">A</span>
+            <button className="flex items-center space-x-3 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-gray-700">
+                  {user?.name?.charAt(0) || 'U'}
+                </span>
               </div>
-              <span className="hidden md:block text-sm font-medium text-gray-700">Admin</span>
-              <svg className={`h-4 w-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <div className="hidden md:block text-left">
+                <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
+              </div>
             </button>
-
-            {/* Dropdown menu */}
-            {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">Admin User</p>
-                  <p className="text-xs text-gray-500">admin@rfqpro.com</p>
-                </div>
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Profile Settings
+            
+            {/* User dropdown */}
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+              <div className="py-1">
+                <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  Your Profile
                 </a>
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Account Settings
+                <a href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  Settings
                 </a>
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Notifications
-                </a>
-                <div className="border-t border-gray-100">
-                  <button 
-                    onClick={handleSignOut}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Sign out
-                  </button>
-                </div>
+                <hr className="my-1" />
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('isAuthenticated')
+                    localStorage.removeItem('user')
+                    window.location.href = '/login'
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Sign out
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Click outside to close dropdown */}
-      {userMenuOpen && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setUserMenuOpen(false)}
-        />
-      )}
     </header>
   )
 }
