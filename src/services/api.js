@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = 'http://127.0.0.1:8000/api'
+const API_BASE_URL = 'http://62.171.176.47:8081/api'
 
 // Helper functions
 const getAuthToken = () => localStorage.getItem('authToken')
