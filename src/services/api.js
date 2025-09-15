@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = 'http://62.171.176.47:8081/api'
+const API_BASE_URL = 'https://api.furnitrack.com/api'
 
 // Helper functions
 const getAuthToken = () => localStorage.getItem('authToken')
