@@ -1,7 +1,7 @@
 import { MagnifyingGlassIcon, ChartBarIcon, DocumentTextIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 
-const Comparison = () => {
+const Comparison = ({ userRole }) => {
   const [selectedRFQ, setSelectedRFQ] = useState('1')
   const [selectedBids, setSelectedBids] = useState(['1', '2'])
 

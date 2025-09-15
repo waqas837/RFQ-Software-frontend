@@ -1,7 +1,9 @@
 import { ChartBarIcon, DocumentTextIcon, DocumentArrowDownIcon, CalendarIcon, CurrencyDollarIcon, UserGroupIcon } from '@heroicons/react/24/outline'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Charts from '../components/Charts'
+import { reportsAPI } from '../services/api'
 
-const Reports = () => {
+const Reports = ({ userRole }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('30')
   const [selectedReport, setSelectedReport] = useState('overview')
 
@@ -19,115 +21,194 @@ const Reports = () => {
     { id: 'cost', name: 'Cost Savings', icon: CurrencyDollarIcon }
   ]
 
-  const overviewData = {
-    totalRFQs: 24,
-    activeRFQs: 8,
-    totalBids: 156,
-    averageBidsPerRFQ: 6.5,
-    totalSavings: '$45,200',
-    averageSavings: '$1,883',
-    topSuppliers: [
-      { name: 'Tech Solutions Inc.', bids: 15, successRate: '85%' },
-      { name: 'Office Supply Co.', bids: 12, successRate: '75%' },
-      { name: 'Digital Marketing Pro', bids: 8, successRate: '62%' }
-    ],
-    monthlyTrends: [
-      { month: 'Jan', rfqs: 8, bids: 45, savings: 12500 },
-      { month: 'Feb', rfqs: 6, bids: 38, savings: 9800 },
-      { month: 'Mar', rfqs: 10, bids: 73, savings: 12900 }
-    ]
+  const [overviewData, setOverviewData] = useState({
+    totalRFQs: 0,
+    activeRFQs: 0,
+    totalBids: 0,
+    averageBidsPerRFQ: 0,
+    totalSavings: 0,
+    averageSavings: 0,
+    topSuppliers: [],
+    monthlyTrends: []
+  })
+  const [rfqAnalysisData, setRfqAnalysisData] = useState({
+    rfqStatusDistribution: [],
+    monthlyRfqTrends: [],
+    categoryDistribution: [],
+    averageBidsPerRfq: 0,
+    rfqCompletionTime: 0
+  })
+  const [supplierPerformanceData, setSupplierPerformanceData] = useState({
+    topSuppliers: [],
+    supplierWinRates: [],
+    supplierResponseTimes: [],
+    supplierQualityRatings: []
+  })
+  const [costSavingsData, setCostSavingsData] = useState({
+    totalSavings: 0,
+    averageSavingsPerRfq: 0,
+    savingsByCategory: [],
+    monthlySavingsTrend: []
+  })
+  const [loading, setLoading] = useState(true)
+
+  // Data transformation functions
+  const transformMonthlyTrends = (data) => {
+    return data.map(item => ({
+      month: item.month,
+      rfqs: item.rfqs || 0,
+      bids: item.bids || 0,
+      awards: item.awards || 0
+    }))
   }
 
-  const rfqAnalysisData = [
-    {
-      id: 1,
-      title: 'Office Supplies RFQ',
-      category: 'Office Supplies',
-      status: 'Awarded',
-      totalBids: 8,
-      budget: '$5,000',
-      awardedAmount: '$4,850',
-      savings: '$150',
-      savingsPercentage: '3%',
-      averageBidAmount: '$5,200'
-    },
-    {
-      id: 2,
-      title: 'IT Equipment Procurement',
-      category: 'IT Equipment',
-      status: 'Under Evaluation',
-      totalBids: 12,
-      budget: '$25,000',
-      awardedAmount: null,
-      savings: null,
-      savingsPercentage: null,
-      averageBidAmount: '$24,800'
-    },
-    {
-      id: 3,
-      title: 'Marketing Services',
-      category: 'Services',
-      status: 'Awarded',
-      totalBids: 6,
-      budget: '$15,000',
-      awardedAmount: '$14,500',
-      savings: '$500',
-      savingsPercentage: '3.3%',
-      averageBidAmount: '$15,200'
-    }
-  ]
+  const transformRfqStatusData = (data) => {
+    return data.map(item => ({
+      name: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+      value: item.count || 0,
+      color: getStatusColor(item.status)
+    }))
+  }
 
-  const supplierPerformanceData = [
-    {
-      id: 1,
-      name: 'Tech Solutions Inc.',
-      totalBids: 15,
-      awardedBids: 8,
-      successRate: '53%',
-      averageScore: 87,
-      totalValue: '$125,000',
-      onTimeDelivery: '95%',
-      qualityRating: 4.8
-    },
-    {
-      id: 2,
-      name: 'Office Supply Co.',
-      totalBids: 12,
-      awardedBids: 6,
-      successRate: '50%',
-      averageScore: 82,
-      totalValue: '$45,000',
-      onTimeDelivery: '92%',
-      qualityRating: 4.6
-    },
-    {
-      id: 3,
-      name: 'Digital Marketing Pro',
-      totalBids: 8,
-      awardedBids: 3,
-      successRate: '38%',
-      averageScore: 89,
-      totalValue: '$35,000',
-      onTimeDelivery: '100%',
-      qualityRating: 4.9
-    }
-  ]
+  const transformCategoryData = (data) => {
+    return data.map(item => ({
+      name: item.name,
+      value: item.count || 0,
+      color: getCategoryColor(item.name)
+    }))
+  }
 
-  const costSavingsData = {
-    totalSavings: '$45,200',
-    averageSavingsPerRFQ: '$1,883',
-    savingsByCategory: [
-      { category: 'IT Equipment', savings: '$18,500', percentage: '41%' },
-      { category: 'Office Supplies', savings: '$12,300', percentage: '27%' },
-      { category: 'Services', savings: '$8,900', percentage: '20%' },
-      { category: 'Furniture', savings: '$5,500', percentage: '12%' }
-    ],
-    monthlySavings: [
-      { month: 'Jan', savings: 12500 },
-      { month: 'Feb', savings: 9800 },
-      { month: 'Mar', savings: 12900 },
-      { month: 'Apr', savings: 10000 }
-    ]
+  const getStatusColor = (status) => {
+    const colors = {
+      'draft': '#6B7280',
+      'published': '#3B82F6',
+      'bidding_open': '#10B981',
+      'awarded': '#F59E0B',
+      'completed': '#10B981',
+      'cancelled': '#EF4444'
+    }
+    return colors[status] || '#6B7280'
+  }
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      'IT Equipment': '#3B82F6',
+      'Office Supplies': '#10B981',
+      'Services': '#F59E0B',
+      'Furniture': '#8B5CF6',
+      'Materials': '#EF4444'
+    }
+    return colors[category] || '#6B7280'
+  }
+
+  // Fetch reports data on component mount
+  useEffect(() => {
+    fetchReportsData()
+  }, [selectedPeriod, selectedReport])
+
+  const fetchReportsData = async () => {
+    try {
+      setLoading(true)
+      
+      let response
+      switch (selectedReport) {
+        case 'overview':
+          response = await reportsAPI.getDashboard({ period: selectedPeriod })
+          break
+        case 'rfq':
+          response = await reportsAPI.getRfqAnalysis({ period: selectedPeriod })
+          break
+        case 'supplier':
+          response = await reportsAPI.getSupplierPerformance({ period: selectedPeriod })
+          break
+        case 'cost':
+          response = await reportsAPI.getCostSavings({ period: selectedPeriod })
+          break
+        default:
+          response = await reportsAPI.getDashboard({ period: selectedPeriod })
+      }
+      
+      if (response.success) {
+        switch (selectedReport) {
+          case 'overview':
+            // Map backend field names to frontend expected names
+            const overviewData = response.data || {}
+            setOverviewData({
+              totalRFQs: overviewData.total_rfqs || overviewData.my_rfqs || 0,
+              activeRFQs: overviewData.active_rfqs || 0,
+              totalBids: overviewData.total_bids || overviewData.total_bids_received || overviewData.my_bids || 0,
+              averageBidsPerRFQ: overviewData.average_bids_per_rfq || 0,
+              totalSavings: overviewData.total_savings || 0,
+              averageSavings: overviewData.average_savings || 0,
+              topSuppliers: overviewData.top_suppliers || [],
+              monthlyTrends: transformMonthlyTrends(overviewData.monthly_trends || []),
+              rfqStatusDistribution: transformRfqStatusData(overviewData.rfq_status_distribution || []),
+              categoryDistribution: transformCategoryData(overviewData.category_distribution || [])
+            })
+            break
+          case 'rfq':
+            const rfqData = response.data || {}
+            setRfqAnalysisData({
+              rfqStatusDistribution: transformRfqStatusData(rfqData.rfq_status_distribution || []),
+              monthlyRfqTrends: transformMonthlyTrends(rfqData.monthly_rfq_trends || []),
+              categoryDistribution: transformCategoryData(rfqData.category_distribution || []),
+              averageBidsPerRfq: rfqData.average_bids_per_rfq || 0,
+              rfqCompletionTime: rfqData.rfq_completion_time || 0
+            })
+            break
+          case 'supplier':
+            const supplierData = response.data || {}
+            setSupplierPerformanceData({
+              topSuppliers: supplierData.top_suppliers || [],
+              supplierWinRates: supplierData.supplier_win_rates || [],
+              supplierResponseTimes: supplierData.supplier_response_times || [],
+              supplierQualityRatings: supplierData.supplier_quality_ratings || []
+            })
+            break
+          case 'cost':
+            const costData = response.data || {}
+            setCostSavingsData({
+              totalSavings: costData.total_savings || 0,
+              averageSavingsPerRfq: costData.average_savings_per_rfq || 0,
+              savingsByCategory: transformCategoryData(costData.savings_by_category || []),
+              monthlySavingsTrend: transformMonthlyTrends(costData.monthly_savings_trend || [])
+            })
+            break
+        }
+      } else {
+        console.error('Failed to fetch reports data:', response.message)
+      }
+    } catch (error) {
+      console.error('Error fetching reports data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExportReport = async (reportType) => {
+    try {
+      const response = await reportsAPI.export({
+        type: reportType,
+        period: selectedPeriod,
+        format: 'pdf'
+      })
+      
+      if (response.success) {
+        // Download the exported file
+        const link = document.createElement('a')
+        link.href = response.data.downloadUrl
+        link.download = `${reportType}_report_${selectedPeriod}days.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        alert('Report exported successfully!')
+      } else {
+        alert('Failed to export report: ' + response.message)
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error)
+      alert('Error exporting report. Please try again.')
+    }
   }
 
   const renderOverviewReport = () => (
@@ -148,7 +229,7 @@ const Reports = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <UserGroupIcon className="h-8 w-8 text-green-600" />
+              <UserGroupIcon className="h-8 w-8 text-gray-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Bids</p>
@@ -159,7 +240,7 @@ const Reports = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <CurrencyDollarIcon className="h-8 w-8 text-purple-600" />
+              <CurrencyDollarIcon className="h-8 w-8 text-gray-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Savings</p>
@@ -187,7 +268,7 @@ const Reports = () => {
         </div>
         <div className="p-6">
           <div className="space-y-4">
-            {overviewData.topSuppliers.map((supplier, index) => (
+            {(overviewData.topSuppliers || []).map((supplier, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
@@ -206,6 +287,17 @@ const Reports = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-6">Analytics Dashboard</h3>
+        <Charts 
+          rfqStatusData={overviewData.rfqStatusDistribution || []}
+          monthlyTrendData={overviewData.monthlyTrends || []}
+          categoryData={overviewData.categoryDistribution || []}
+          budgetData={overviewData.budgetData || []}
+        />
       </div>
     </div>
   )
@@ -228,13 +320,26 @@ const Reports = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {rfqAnalysisData.map((rfq) => (
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+                </td>
+              </tr>
+            ) : !rfqAnalysisData.rfqStatusDistribution || rfqAnalysisData.rfqStatusDistribution.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                  No RFQ analysis data found
+                </td>
+              </tr>
+            ) : (
+              (rfqAnalysisData.rfqStatusDistribution || []).map((rfq) => (
               <tr key={rfq.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{rfq.title}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rfq.category}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    rfq.status === 'Awarded' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    rfq.status === 'Awarded' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'
                   }`}>
                     {rfq.status}
                   </span>
@@ -243,13 +348,14 @@ const Reports = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rfq.budget}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {rfq.savings ? (
-                    <span className="text-green-600 font-medium">{rfq.savings} ({rfq.savingsPercentage})</span>
+                    <span className="text-gray-600 font-medium">{rfq.savings} ({rfq.savingsPercentage})</span>
                   ) : (
                     <span className="text-gray-400">-</span>
                   )}
-                </td>
-              </tr>
-            ))}
+                                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -274,16 +380,30 @@ const Reports = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {supplierPerformanceData.map((supplier) => (
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+                </td>
+              </tr>
+            ) : !supplierPerformanceData.topSuppliers || supplierPerformanceData.topSuppliers.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                  No supplier performance data found
+                </td>
+              </tr>
+            ) : (
+              (supplierPerformanceData.topSuppliers || []).map((supplier) => (
               <tr key={supplier.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{supplier.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{supplier.totalBids}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{supplier.successRate}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{supplier.averageScore}/100</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{supplier.onTimeDelivery}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{supplier.qualityRating}/5</td>
-              </tr>
-            ))}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{supplier.qualityRating}/5                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -296,13 +416,13 @@ const Reports = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Total Savings</h3>
-          <div className="text-3xl font-bold text-green-600 mb-2">{costSavingsData.totalSavings}</div>
+          <div className="text-3xl font-bold text-gray-600 mb-2">{costSavingsData.totalSavings}</div>
           <p className="text-sm text-gray-500">Average per RFQ: {costSavingsData.averageSavingsPerRFQ}</p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Savings by Category</h3>
           <div className="space-y-3">
-            {costSavingsData.savingsByCategory.map((category, index) => (
+            {(costSavingsData.savingsByCategory || []).map((category, index) => (
               <div key={index} className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">{category.category}</span>
                 <div className="text-right">
@@ -319,10 +439,10 @@ const Reports = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Savings Trend</h3>
         <div className="flex items-end space-x-4 h-32">
-          {costSavingsData.monthlySavings.map((month, index) => (
+          {(costSavingsData.monthlySavingsTrend || []).map((month, index) => (
             <div key={index} className="flex-1 flex flex-col items-center">
               <div 
-                className="w-full bg-green-500 rounded-t"
+                className="w-full bg-gray-500 rounded-t"
                 style={{ height: `${(month.savings / 15000) * 100}%` }}
               ></div>
               <div className="text-xs text-gray-500 mt-2">{month.month}</div>
@@ -363,7 +483,10 @@ const Reports = () => {
               <CalendarIcon className="h-5 w-5 mr-2" />
               {periods.find(p => p.id === selectedPeriod)?.name}
             </button>
-            <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+            <button 
+              onClick={() => handleExportReport(selectedReport)}
+              className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
               <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
               Export
             </button>
@@ -381,7 +504,7 @@ const Reports = () => {
                 onClick={() => setSelectedReport(report.id)}
                 className={`flex items-center px-4 py-2 rounded-md border ${
                   selectedReport === report.id
-                    ? 'bg-green-600 text-white border-green-600'
+                    ? 'bg-gray-600 text-white border-gray-600'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >

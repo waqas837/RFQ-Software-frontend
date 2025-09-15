@@ -49,7 +49,7 @@ const FileUpload = ({ files, onFilesChange, maxFiles = 5, maxSize = 25 * 1024 * 
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
           isDragActive 
-            ? 'border-green-500 bg-green-50' 
+            ? 'border-gray-500 bg-gray-50' 
             : 'border-gray-300 hover:border-gray-400'
         }`}
       >

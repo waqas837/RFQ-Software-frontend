@@ -185,7 +185,7 @@ export const SupplierForm = ({ onSubmit, initialData = null }) => {
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700"
+          className="px-4 py-2 bg-gray-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-gray-700"
         >
           {initialData ? 'Update Supplier' : 'Add Supplier'}
         </button>

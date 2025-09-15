@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   HomeIcon, 
@@ -10,23 +10,74 @@ import {
   Cog6ToothIcon,
   ArrowLeftOnRectangleIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  UsersIcon,
+  BuildingOfficeIcon,
+  ShieldCheckIcon,
+  EnvelopeIcon,
+  CubeIcon,
+  TagIcon,
+  BellIcon
 } from '@heroicons/react/24/outline'
 import Logo from '../Logo'
 
-const Sidebar = () => {
+const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'RFQs', href: '/rfqs', icon: DocumentTextIcon },
-    { name: 'Bids', href: '/bids', icon: ClipboardDocumentListIcon },
-    { name: 'Suppliers', href: '/suppliers', icon: UserGroupIcon },
-    { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
-    { name: 'Reports', href: '/reports', icon: ChartBarIcon },
-    { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
-  ]
+  // Listen for toggle event from header
+  useEffect(() => {
+    const handleToggle = () => setIsOpen(!isOpen)
+    window.addEventListener('toggleSidebar', handleToggle)
+    return () => window.removeEventListener('toggleSidebar', handleToggle)
+  }, [isOpen])
+
+  // Role-based navigation
+  const getNavigation = () => {
+    if (!userRole) return []
+    
+    switch (userRole) {
+      case 'admin':
+        return [
+          { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+          { name: 'Notifications', href: '/notifications', icon: BellIcon },
+          { name: 'User Management', href: '/users', icon: UsersIcon },
+          { name: 'Company Management', href: '/companies', icon: BuildingOfficeIcon },
+          { name: 'Item Catalog', href: '/items', icon: CubeIcon },
+          { name: 'Categories', href: '/categories', icon: TagIcon },
+          { name: 'Item Templates', href: '/item-templates', icon: DocumentTextIcon },
+          { name: 'Email Templates', href: '/email-templates', icon: EnvelopeIcon },
+          { name: 'View RFQs', href: '/rfqs', icon: DocumentTextIcon },
+          { name: 'View Bids', href: '/bids', icon: ClipboardDocumentListIcon },
+          { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
+          { name: 'Reports', href: '/reports', icon: ChartBarIcon },
+          { name: 'System Settings', href: '/settings', icon: ShieldCheckIcon },
+        ]
+      case 'supplier':
+        return [
+          { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+          { name: 'Notifications', href: '/notifications', icon: BellIcon },
+          { name: 'Available RFQs', href: '/rfqs', icon: DocumentTextIcon },
+          { name: 'My Bids', href: '/bids', icon: ClipboardDocumentListIcon },
+          { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
+          { name: 'My Profile', href: '/profile', icon: UserGroupIcon },
+          { name: 'Reports', href: '/reports', icon: ChartBarIcon },
+        ]
+      default: // buyer
+        return [
+          { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+          { name: 'Notifications', href: '/notifications', icon: BellIcon },
+          { name: 'Create RFQ', href: '/rfqs/create', icon: DocumentTextIcon },
+          { name: 'My RFQs', href: '/rfqs', icon: DocumentTextIcon },
+          { name: 'Evaluate Bids', href: '/bids', icon: ClipboardDocumentListIcon },
+          { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
+          { name: 'Reports', href: '/reports', icon: ChartBarIcon },
+          { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+        ]
+    }
+  }
+
+  const navigation = getNavigation()
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated')
@@ -40,34 +91,20 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile menu button */}
-      <div className="lg:hidden">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500"
-        >
-          <span className="sr-only">Open sidebar</span>
-          {isOpen ? (
-            <XMarkIcon className="block h-6 w-6" />
-          ) : (
-            <Bars3Icon className="block h-6 w-6" />
-          )}
-        </button>
-      </div>
 
-      {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+             {/* Sidebar */}
+       <div className={`
+         fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 h-screen
+         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-            <Logo size="small" />
+          <div className="flex items-center justify-center h-[85px] px-4 border-b border-gray-200 pb-2">
+            <Logo size="default" />
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -88,7 +125,7 @@ const Sidebar = () => {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="flex-shrink-0 p-4 pb-6 border-t border-gray-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
@@ -117,10 +154,10 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Overlay for mobile */}
+      {/* Light gray overlay for mobile - subtle tint over content */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          className="fixed inset-y-0 left-64 right-0 z-40 bg-gray-200 bg-opacity-30 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}

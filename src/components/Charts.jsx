@@ -16,38 +16,38 @@ import {
   ResponsiveContainer 
 } from 'recharts'
 
-// RFQ Status Chart Data
-const rfqStatusData = [
-  { name: 'Draft', value: 12, color: '#6B7280' },
-  { name: 'Published', value: 8, color: '#4B5563' },
-  { name: 'In Progress', value: 15, color: '#374151' },
-  { name: 'Completed', value: 23, color: '#1F2937' },
-  { name: 'Cancelled', value: 3, color: '#9CA3AF' }
+// Default colors for charts
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16', '#F97316']
+
+// Default data if no data provided
+const defaultRfqStatusData = [
+  { name: 'Draft', value: 0, color: '#6B7280' },
+  { name: 'Published', value: 0, color: '#4B5563' },
+  { name: 'In Progress', value: 0, color: '#374151' },
+  { name: 'Completed', value: 0, color: '#1F2937' },
+  { name: 'Cancelled', value: 0, color: '#9CA3AF' }
 ]
 
-// Monthly RFQ Trend Data
-const monthlyTrendData = [
-  { month: 'Jan', rfqs: 15, bids: 45, awards: 12 },
-  { month: 'Feb', rfqs: 18, bids: 52, awards: 15 },
-  { month: 'Mar', rfqs: 22, bids: 61, awards: 18 },
-  { month: 'Apr', rfqs: 19, bids: 48, awards: 14 },
-  { month: 'May', rfqs: 25, bids: 67, awards: 20 },
-  { month: 'Jun', rfqs: 28, bids: 73, awards: 22 },
-  { month: 'Jul', rfqs: 24, bids: 58, awards: 17 },
-  { month: 'Aug', rfqs: 31, bids: 82, awards: 25 }
+const defaultMonthlyTrendData = [
+  { month: 'Jan', rfqs: 0, bids: 0, awards: 0 },
+  { month: 'Feb', rfqs: 0, bids: 0, awards: 0 },
+  { month: 'Mar', rfqs: 0, bids: 0, awards: 0 },
+  { month: 'Apr', rfqs: 0, bids: 0, awards: 0 },
+  { month: 'May', rfqs: 0, bids: 0, awards: 0 },
+  { month: 'Jun', rfqs: 0, bids: 0, awards: 0 },
+  { month: 'Jul', rfqs: 0, bids: 0, awards: 0 },
+  { month: 'Aug', rfqs: 0, bids: 0, awards: 0 }
 ]
 
-// Category Distribution Data
-const categoryData = [
-  { name: 'IT Equipment', value: 35, color: '#4B5563' },
-  { name: 'Office Supplies', value: 25, color: '#6B7280' },
-  { name: 'Services', value: 20, color: '#374151' },
-  { name: 'Furniture', value: 15, color: '#1F2937' },
-  { name: 'Materials', value: 5, color: '#9CA3AF' }
+const defaultCategoryData = [
+  { name: 'IT Equipment', value: 0, color: '#4B5563' },
+  { name: 'Office Supplies', value: 0, color: '#6B7280' },
+  { name: 'Services', value: 0, color: '#374151' },
+  { name: 'Furniture', value: 0, color: '#1F2937' },
+  { name: 'Materials', value: 0, color: '#9CA3AF' }
 ]
 
-// Budget vs Actual Data
-const budgetData = [
+const defaultBudgetData = [
   { month: 'Jan', budget: 50000, actual: 48000 },
   { month: 'Feb', budget: 55000, actual: 52000 },
   { month: 'Mar', budget: 60000, actual: 58000 },
@@ -56,14 +56,16 @@ const budgetData = [
   { month: 'Jun', budget: 70000, actual: 68000 }
 ]
 
-const RFQStatusChart = () => {
+const RFQStatusChart = ({ data = [] }) => {
+  const chartData = data.length > 0 ? data : defaultRfqStatusData
+  
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-medium text-gray-900 mb-4">RFQ Status Distribution</h3>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
-            data={rfqStatusData}
+            data={chartData}
             cx="50%"
             cy="50%"
             labelLine={false}
@@ -72,7 +74,7 @@ const RFQStatusChart = () => {
             fill="#8884d8"
             dataKey="value"
           >
-            {rfqStatusData.map((entry, index) => (
+            {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
@@ -83,12 +85,14 @@ const RFQStatusChart = () => {
   )
 }
 
-const MonthlyTrendChart = () => {
+const MonthlyTrendChart = ({ data = [] }) => {
+  const chartData = data.length > 0 ? data : defaultMonthlyTrendData
+  
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Trends</h3>
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={monthlyTrendData}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
           <XAxis dataKey="month" stroke="#6B7280" />
           <YAxis stroke="#6B7280" />
@@ -97,20 +101,23 @@ const MonthlyTrendChart = () => {
           <Line 
             type="monotone" 
             dataKey="rfqs" 
-            stroke="#4B5563" 
+            stroke="#3B82F6" 
             strokeWidth={2}
+            name="RFQs"
           />
           <Line 
             type="monotone" 
             dataKey="bids" 
-            stroke="#6B7280" 
+            stroke="#10B981" 
             strokeWidth={2}
+            name="Bids"
           />
           <Line 
             type="monotone" 
             dataKey="awards" 
-            stroke="#374151" 
+            stroke="#F59E0B" 
             strokeWidth={2}
+            name="Awards"
           />
         </LineChart>
       </ResponsiveContainer>
@@ -118,29 +125,33 @@ const MonthlyTrendChart = () => {
   )
 }
 
-const CategoryDistributionChart = () => {
+const CategoryDistributionChart = ({ data = [] }) => {
+  const chartData = data.length > 0 ? data : defaultCategoryData
+  
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Category Distribution</h3>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={categoryData}>
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
           <XAxis dataKey="name" stroke="#6B7280" />
           <YAxis stroke="#6B7280" />
           <Tooltip />
-          <Bar dataKey="value" fill="#4B5563" />
+          <Bar dataKey="value" fill="#3B82F6" />
         </BarChart>
       </ResponsiveContainer>
     </div>
   )
 }
 
-const BudgetVsActualChart = () => {
+const BudgetVsActualChart = ({ data = [] }) => {
+  const chartData = data.length > 0 ? data : defaultBudgetData
+  
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 className="text-lg font-medium text-gray-900 mb-4">Budget vs Actual Spend</h3>
       <ResponsiveContainer width="100%" height={300}>
-        <AreaChart data={budgetData}>
+        <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
           <XAxis dataKey="month" stroke="#6B7280" />
           <YAxis stroke="#6B7280" />
@@ -150,17 +161,19 @@ const BudgetVsActualChart = () => {
             type="monotone" 
             dataKey="budget" 
             stackId="1" 
-            stroke="#4B5563" 
-            fill="#4B5563" 
+            stroke="#3B82F6" 
+            fill="#3B82F6" 
             fillOpacity={0.6}
+            name="Budget"
           />
           <Area 
             type="monotone" 
             dataKey="actual" 
-            stackId="1" 
-            stroke="#6B7280" 
-            fill="#6B7280" 
+            stackId="2" 
+            stroke="#10B981" 
+            fill="#10B981" 
             fillOpacity={0.6}
+            name="Actual"
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -169,15 +182,22 @@ const BudgetVsActualChart = () => {
 }
 
 // Default export that renders all charts in a grid
-const Charts = () => {
+const ChartsGrid = ({ 
+  rfqStatusData = [], 
+  monthlyTrendData = [], 
+  categoryData = [], 
+  budgetData = [],
+  supplierPerformanceData = [],
+  costSavingsData = []
+}) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <RFQStatusChart />
-      <MonthlyTrendChart />
-      <CategoryDistributionChart />
-      <BudgetVsActualChart />
+      <RFQStatusChart data={rfqStatusData} />
+      <MonthlyTrendChart data={monthlyTrendData} />
+      <CategoryDistributionChart data={categoryData} />
+      <BudgetVsActualChart data={budgetData} />
     </div>
   )
 }
 
-export default Charts
+export default ChartsGrid

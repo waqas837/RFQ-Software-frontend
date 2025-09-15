@@ -1,19 +1,23 @@
+import { useLocation, Link } from 'react-router-dom'
 import PublicNavbar from './PublicNavbar'
 import Logo from '../Logo'
 
 const PublicLayout = ({ children }) => {
+  const location = useLocation()
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password'
+  
   return (
     <div className="bg-white overflow-hidden">
       <PublicNavbar />
       {children}
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
+      {/* Footer - Hidden on auth pages */}
+      {!isAuthPage && (
+        <footer className="bg-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-6">
                 <Logo size="large" showText={false} />
-                <span className="ml-3 text-2xl font-bold">SIMPLY PROCURE</span>
               </div>
               <p className="text-gray-400 text-lg leading-relaxed mb-8 max-w-md">
                 The complete solution for modern procurement. Streamline your RFQ process, 
@@ -37,27 +41,27 @@ const PublicLayout = ({ children }) => {
             <div>
               <h3 className="font-semibold text-lg mb-6">Product</h3>
               <ul className="space-y-4 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#integrations" className="hover:text-white transition-colors">Integrations</a></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold text-lg mb-6">Company</h3>
               <ul className="space-y-4 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
+                <li><a href="#blog" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#careers" className="hover:text-white transition-colors">Careers</a></li>
+                <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 SIMPLY PROCURE. All rights reserved. | Privacy Policy | Terms of Service</p>
+            <p>&copy; 2025 SIMPLY PROCURE. All rights reserved. | <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link> | <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></p>
           </div>
         </div>
       </footer>
+      )}
     </div>
   )
 }
