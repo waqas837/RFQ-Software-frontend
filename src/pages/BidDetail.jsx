@@ -9,7 +9,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-import { bidsAPI } from '../services/api'
+import { bidsAPI, currencyAPI } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const BidDetail = () => {
@@ -17,11 +17,29 @@ const BidDetail = () => {
   const navigate = useNavigate()
   const [bid, setBid] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [currencySymbols, setCurrencySymbols] = useState({})
   const { showToast, removeToast, toasts } = useToast()
 
   useEffect(() => {
     fetchBidDetails()
+    fetchCurrencySymbols()
   }, [id])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   const fetchBidDetails = async () => {
     try {
@@ -170,11 +188,11 @@ const BidDetail = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Unit Price</p>
-                      <p className="font-medium text-gray-900">${item.unit_price?.toLocaleString() || '0'}</p>
+                      <p className="font-medium text-gray-900">{formatCurrency(item.unit_price, bid.currency)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Total Price</p>
-                      <p className="font-medium text-gray-900">${item.total_price?.toLocaleString() || '0'}</p>
+                      <p className="font-medium text-gray-900">{formatCurrency(item.total_price, bid.currency)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Notes</p>
@@ -190,7 +208,7 @@ const BidDetail = () => {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-medium text-gray-900">Total Bid Amount:</span>
                 <span className="text-2xl font-bold text-green-600">
-                  ${bid.total_amount?.toLocaleString() || '0'}
+                  {formatCurrency(bid.total_amount, bid.currency)}
                 </span>
               </div>
             </div>
@@ -218,7 +236,7 @@ const BidDetail = () => {
                 <div>
                   <p className="text-sm text-gray-500">Total Amount</p>
                   <p className="font-medium text-gray-900">
-                    ${bid.total_amount?.toLocaleString() || '0'}
+                    {formatCurrency(bid.total_amount, bid.currency)}
                   </p>
                 </div>
               </div>

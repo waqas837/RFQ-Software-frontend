@@ -10,7 +10,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-import { rfqsAPI, bidsAPI } from '../services/api'
+import { rfqsAPI, bidsAPI, currencyAPI } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const RFQDetail = ({ userRole }) => {
@@ -19,11 +19,29 @@ const RFQDetail = ({ userRole }) => {
   const [rfq, setRfq] = useState(null)
   const [loading, setLoading] = useState(true)
   const [existingBid, setExistingBid] = useState(null)
+  const [currencySymbols, setCurrencySymbols] = useState({})
   const { showToast, removeToast, toasts } = useToast()
 
   useEffect(() => {
     fetchRFQDetails()
+    fetchCurrencySymbols()
   }, [id])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   const fetchRFQDetails = async () => {
     try {
@@ -230,7 +248,9 @@ const RFQDetail = ({ userRole }) => {
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-medium text-gray-900">{item.item_name}</h3>
-                    <span className="text-sm text-gray-500">Qty: {item.quantity} {item.unit_of_measure}</span>
+                    <span className="text-sm text-gray-500">
+                      Qty: {item.quantity} {item.unit_of_measure && item.unit_of_measure !== 'asdfasdf' ? item.unit_of_measure : 'units'}
+                    </span>
                   </div>
                   {item.item_description && (
                     <p className="text-gray-600 text-sm mb-2">{item.item_description}</p>
@@ -278,7 +298,7 @@ const RFQDetail = ({ userRole }) => {
                 <div>
                   <p className="text-sm text-gray-500">Budget Range</p>
                   <p className="font-medium text-gray-900">
-                    ${rfq.budget_min?.toLocaleString() || '0'} - ${rfq.budget_max?.toLocaleString() || '0'}
+                    {formatCurrency(rfq.budget_min, rfq.currency)} - {formatCurrency(rfq.budget_max, rfq.currency)}
                   </p>
                 </div>
               </div>
@@ -313,6 +333,36 @@ const RFQDetail = ({ userRole }) => {
             </div>
           </div>
 
+          {/* Attachments */}
+          {rfq.attachments && rfq.attachments.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Attachments</h3>
+              <div className="space-y-2">
+                {rfq.attachments.map((attachment, index) => {
+                  // Extract filename from path for display
+                  const filename = attachment.split('/').pop();
+                  return (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <DocumentTextIcon className="w-5 h-5 text-gray-400 mr-3" />
+                        <span className="text-sm font-medium text-gray-900">{filename}</span>
+                      </div>
+                      <a
+                        href={`/storage/${attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        download={filename}
+                      >
+                        Download
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Bidding Status */}
           {userRole === 'supplier' && (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -324,7 +374,7 @@ const RFQDetail = ({ userRole }) => {
                     <span className="text-sm text-gray-700">Bid Submitted</span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    <p>Amount: ${existingBid.total_amount?.toLocaleString() || '0'}</p>
+                    <p>Amount: {formatCurrency(existingBid.total_amount, existingBid.currency)}</p>
                     <p>Status: {existingBid.status}</p>
                     <p>Submitted: {new Date(existingBid.created_at).toLocaleDateString()}</p>
                   </div>

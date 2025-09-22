@@ -18,7 +18,7 @@ import {
   TruckIcon
 } from '@heroicons/react/24/outline'
 import Charts from '../components/Charts'
-import { rfqsAPI, bidsAPI, reportsAPI, purchaseOrdersAPI } from '../services/api'
+import { rfqsAPI, bidsAPI, reportsAPI, purchaseOrdersAPI, currencyAPI } from '../services/api'
 
 const SupplierDashboard = () => {
   const navigate = useNavigate()
@@ -37,10 +37,22 @@ const SupplierDashboard = () => {
   const [myBids, setMyBids] = useState([])
   const [recentAwards, setRecentAwards] = useState([])
   const [recentPOs, setRecentPOs] = useState([])
+  const [currencySymbols, setCurrencySymbols] = useState({})
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   useEffect(() => {
     const loadSupplierData = async () => {
       try {
+        // Load currency symbols
+        const currencyResponse = await currencyAPI.getCurrencySymbols()
+        if (currencyResponse.success) {
+          setCurrencySymbols(currencyResponse.data)
+        }
+        
         // Load dashboard statistics from reports API
         const dashboardResponse = await reportsAPI.getDashboard({ period: 30 })
         const dashboardData = dashboardResponse.data
@@ -279,7 +291,7 @@ const SupplierDashboard = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(rfq.status)}`}>
                         {rfq.status}
                       </span>
-                      <span>Budget: ${rfq.budget_min?.toLocaleString() || '0'} - ${rfq.budget_max?.toLocaleString() || '0'}</span>
+                      <span>Budget: {formatCurrency(rfq.budget_min, rfq.currency)} - {formatCurrency(rfq.budget_max, rfq.currency)}</span>
                       <span>Due: {new Date(rfq.bid_deadline).toLocaleDateString()}</span>
                     </div>
                   </div>
@@ -325,7 +337,7 @@ const SupplierDashboard = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bid.status)}`}>
                         {bid.status}
                       </span>
-                      <span>Amount: ${bid.total_amount?.toLocaleString() || '0'}</span>
+                      <span>Amount: {formatCurrency(bid.total_amount, bid.currency)}</span>
                     </div>
                   </div>
                   <div className="flex space-x-2">
@@ -377,7 +389,7 @@ const SupplierDashboard = () => {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(po.status)}`}>
                       {po.status?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()).replace('To Supplier', 'to Supplier')}
                     </span>
-                    <span>Amount: ${po.total_amount?.toLocaleString() || '0'}</span>
+                    <span>Amount: {formatCurrency(po.total_amount, po.currency)}</span>
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -433,7 +445,7 @@ const SupplierDashboard = () => {
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{bid.rfq?.title || 'Unknown RFQ'}</h4>
                     <p className="text-sm text-gray-600">Awarded on {new Date(bid.updated_at).toLocaleDateString()}</p>
-                    <p className="text-lg font-semibold text-green-600">${bid.total_amount?.toLocaleString() || '0'}</p>
+                    <p className="text-lg font-semibold text-green-600">{formatCurrency(bid.total_amount, bid.currency)}</p>
                   </div>
                 </div>
               </div>

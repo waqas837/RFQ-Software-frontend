@@ -146,17 +146,17 @@ function App() {
                 </RoleBasedRoute>
               } />
               <Route path="/categories" element={
-                <RoleBasedRoute userRole={userRole} allowedRoles={['admin']}>
+                <RoleBasedRoute userRole={userRole} allowedRoles={['admin', 'buyer']}>
                   <Categories />
                 </RoleBasedRoute>
               } />
               <Route path="/item-templates" element={
-                <RoleBasedRoute userRole={userRole} allowedRoles={['admin']}>
+                <RoleBasedRoute userRole={userRole} allowedRoles={['admin', 'buyer']}>
                   <ItemTemplates />
                 </RoleBasedRoute>
               } />
               <Route path="/items" element={
-                <RoleBasedRoute userRole={userRole} allowedRoles={['admin']}>
+                <RoleBasedRoute userRole={userRole} allowedRoles={['admin', 'buyer']}>
                   <Items />
                 </RoleBasedRoute>
               } />

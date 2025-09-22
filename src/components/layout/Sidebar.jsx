@@ -67,8 +67,10 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
         return [
           { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
           { name: 'Notifications', href: '/notifications', icon: BellIcon },
-          { name: 'Create RFQ', href: '/rfqs/create', icon: DocumentTextIcon },
           { name: 'My RFQs', href: '/rfqs', icon: DocumentTextIcon },
+          { name: 'Item Catalog', href: '/items', icon: CubeIcon },
+          { name: 'Categories', href: '/categories', icon: TagIcon },
+          { name: 'Item Templates', href: '/item-templates', icon: DocumentTextIcon },
           { name: 'Evaluate Bids', href: '/bids', icon: ClipboardDocumentListIcon },
           { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
           { name: 'Reports', href: '/reports', icon: ChartBarIcon },

@@ -5,25 +5,29 @@ import * as yup from 'yup'
 import { ChevronLeftIcon, ChevronRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import RichTextEditor from './RichTextEditor'
 import FileUpload from './FileUpload'
-import { itemsAPI, categoriesAPI } from '../services/api'
+import { itemsAPI, categoriesAPI, usersAPI, currencyAPI } from '../services/api'
 
 const steps = [
   { id: 1, name: 'Basic Information', description: 'RFQ title and category' },
   { id: 2, name: 'Item Selection', description: 'Select items from catalog' },
   { id: 3, name: 'Specifications', description: 'Detailed requirements' },
   { id: 4, name: 'Terms & Budget', description: 'Terms and budget details' },
-  { id: 5, name: 'Review & Submit', description: 'Review and submit RFQ' }
+  { id: 5, name: 'Invite People', description: 'Select people to notify' },
+  { id: 6, name: 'Review & Submit', description: 'Review and submit RFQ' }
 ]
 
 const schema = yup.object({
   title: yup.string().required('RFQ title is required'),
   description: yup.string().required('Description is required'),
   category_id: yup.number().required('Category is required'),
+  currency: yup.string().required('Currency is required'),
   budget_min: yup.number().positive('Minimum budget must be positive').required('Minimum budget is required'),
   budget_max: yup.number().positive('Maximum budget must be positive').required('Maximum budget is required'),
   delivery_deadline: yup.date().min(new Date(), 'Delivery deadline must be after today').required('Delivery deadline is required'),
   bidding_deadline: yup.date().required('Bidding deadline is required'),
-  terms_conditions: yup.string().nullable()
+  terms_conditions: yup.string().nullable(),
+  invited_emails: yup.array().of(yup.string().email('Invalid email address')).nullable(),
+  invited_user_ids: yup.array().of(yup.number()).nullable()
 }).test('budget_range', 'Maximum budget must be greater than or equal to minimum budget', function(value) {
   if (value.budget_max && value.budget_min) {
     return value.budget_max >= value.budget_min;
@@ -58,20 +62,51 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
   const [itemsLoading, setItemsLoading] = useState(false)
   const [availableCategories, setAvailableCategories] = useState([])
   const [categoriesLoading, setCategoriesLoading] = useState(false)
+  const [availableUsers, setAvailableUsers] = useState([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [invitedEmails, setInvitedEmails] = useState([])
+  const [invitedUserIds, setInvitedUserIds] = useState([])
+  const [currencies, setCurrencies] = useState([])
+  const [currenciesLoading, setCurrenciesLoading] = useState(false)
   
   const { register, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: initialData || {}
+    defaultValues: {
+      currency: 'USD',
+      ...initialData
+    }
   })
 
   // Reset form when initialData changes
   useEffect(() => {
     if (initialData) {
-      reset(initialData)
+      reset({
+        currency: 'USD',
+        ...initialData
+      })
       setSelectedItems(initialData.items || [])
       setAttachedFiles(initialData.attachments || [])
     }
   }, [initialData, reset])
+
+  // Fetch currencies on component mount
+  useEffect(() => {
+    fetchCurrencies()
+  }, [])
+
+  const fetchCurrencies = async () => {
+    try {
+      setCurrenciesLoading(true)
+      const response = await currencyAPI.getSupportedCurrencies()
+      if (response.success) {
+        setCurrencies(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currencies:', error)
+    } finally {
+      setCurrenciesLoading(false)
+    }
+  }
 
   const watchedValues = watch()
 
@@ -81,7 +116,9 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
 
   // Reset form and state
   const resetForm = () => {
-    reset();
+    reset({
+      currency: 'USD'
+    });
     setCurrentStep(1);
     setSelectedItems([]);
     setAttachedFiles([]);
@@ -131,12 +168,32 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
     }
   }
 
+  // Fetch users for invitations
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true)
+      const response = await usersAPI.getUsersForInvitations()
+      if (response.success) {
+        setAvailableUsers(response.data || [])
+      } else {
+        console.error('Failed to fetch users:', response.message)
+        setAvailableUsers([])
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      setAvailableUsers([])
+    } finally {
+      setUsersLoading(false)
+    }
+  }
+
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       resetForm();
       fetchItems();
       fetchCategories();
+      fetchUsers();
     }
   }, [isOpen]);
 
@@ -178,12 +235,16 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
       title: data.title,
       description: data.description,
       category_id: data.category_id,
+      currency: data.currency,
       budget_min: parseFloat(data.budget_min),
       budget_max: parseFloat(data.budget_max),
       delivery_deadline: data.delivery_deadline,
       bidding_deadline: data.bidding_deadline,
       terms_conditions: data.terms_conditions || null,
-      items: formattedItems
+      attachments: attachedFiles,
+      items: formattedItems,
+      invited_emails: invitedEmails,
+      invited_user_ids: invitedUserIds
     }
     
     console.log('Final RFQ data being sent:', rfqData);
@@ -201,8 +262,11 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
       return selectedItems.length === 0;
     }
     if (currentStep === 4) {
-      return !watchedValues.budget_min || !watchedValues.budget_max || 
-             !watchedValues.delivery_deadline || !watchedValues.bidding_deadline;
+      return !watchedValues.currency || !watchedValues.budget_min || !watchedValues.budget_max || !watchedValues.bidding_deadline || !watchedValues.delivery_deadline;
+    }
+    if (currentStep === 5) {
+      // Invitation step is optional, so no validation needed
+      return false;
     }
     return false;
   };
@@ -442,10 +506,12 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                       <div className="bg-red-50 border border-red-200 rounded-md p-4">
                         <p className="text-sm font-medium text-red-800 mb-2">Please complete all required fields:</p>
                         <ul className="text-sm text-red-600 space-y-1">
+                          {!watchedValues.currency && <li>• Currency is required</li>}
                           {!watchedValues.budget_min && <li>• Minimum Budget is required</li>}
                           {!watchedValues.budget_max && <li>• Maximum Budget is required</li>}
                           {!watchedValues.bidding_deadline && <li>• Bidding Deadline is required</li>}
                           {!watchedValues.delivery_deadline && <li>• Delivery Deadline is required</li>}
+                          {errors.currency && <li>• {errors.currency.message}</li>}
                           {errors.budget_min && <li>• {errors.budget_min.message}</li>}
                           {errors.budget_max && <li>• {errors.budget_max.message}</li>}
                           {errors.delivery_deadline && <li>• {errors.delivery_deadline.message}</li>}
@@ -456,9 +522,27 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Minimum Budget (USD)</label>
+                        <label className="block text-sm font-medium text-gray-700">Currency</label>
+                        <select
+                          {...register('currency')}
+                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          disabled={currenciesLoading}
+                        >
+                          <option value="">Select Currency</option>
+                          {Object.entries(currencies).map(([code, name]) => (
+                            <option key={code} value={code}>
+                              {code} - {name}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.currency && <p className="mt-1 text-sm text-red-600">{errors.currency.message}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Minimum Budget {watchedValues.currency && `(${watchedValues.currency})`}
+                        </label>
                         <input
                           type="number"
                           {...register('budget_min')}
@@ -468,7 +552,9 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                         {errors.budget_min && <p className="mt-1 text-sm text-red-600">{errors.budget_min.message}</p>}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Maximum Budget (USD)</label>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Maximum Budget {watchedValues.currency && `(${watchedValues.currency})`}
+                        </label>
                         <input
                           type="number"
                           {...register('budget_max')}
@@ -560,6 +646,123 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
 
                 {currentStep === 5 && (
                   <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Invite People to Notify</h3>
+                      <p className="text-sm text-gray-600 mb-6">
+                        Select people who should be notified when this RFQ is created. You can invite both existing users and external email addresses.
+                      </p>
+                      
+                      {/* Invite Existing Users */}
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Invite Existing Users
+                        </label>
+                        {usersLoading ? (
+                          <div className="text-sm text-gray-500">Loading users...</div>
+                        ) : (
+                          <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-md p-3">
+                            {availableUsers.length === 0 ? (
+                              <p className="text-sm text-gray-500">No users available</p>
+                            ) : (
+                              availableUsers.map((user) => (
+                                <label key={user.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+                                  <input
+                                    type="checkbox"
+                                    checked={invitedUserIds.includes(user.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setInvitedUserIds([...invitedUserIds, user.id])
+                                      } else {
+                                        setInvitedUserIds(invitedUserIds.filter(id => id !== user.id))
+                                      }
+                                    }}
+                                    className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                    <div className="text-xs text-gray-500">{user.email} • {user.role}</div>
+                                  </div>
+                                </label>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Invite External Emails */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Invite External Email Addresses
+                        </label>
+                        <div className="space-y-2">
+                          <div className="flex space-x-2">
+                            <input
+                              type="email"
+                              placeholder="Enter email address"
+                              className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  const email = e.target.value.trim()
+                                  if (email && !invitedEmails.includes(email)) {
+                                    setInvitedEmails([...invitedEmails, email])
+                                    e.target.value = ''
+                                  }
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                const input = e.target.previousElementSibling
+                                const email = input.value.trim()
+                                if (email && !invitedEmails.includes(email)) {
+                                  setInvitedEmails([...invitedEmails, email])
+                                  input.value = ''
+                                }
+                              }}
+                              className="px-4 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700"
+                            >
+                              Add
+                            </button>
+                          </div>
+                          
+                          {/* Display invited emails */}
+                          {invitedEmails.length > 0 && (
+                            <div className="space-y-1">
+                              {invitedEmails.map((email, index) => (
+                                <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                                  <span className="text-sm text-gray-700">{email}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setInvitedEmails(invitedEmails.filter((_, i) => i !== index))}
+                                    className="text-red-600 hover:text-red-800 text-sm"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      {(invitedUserIds.length > 0 || invitedEmails.length > 0) && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                          <h4 className="text-sm font-medium text-blue-800 mb-2">Invitation Summary</h4>
+                          <div className="text-sm text-blue-700">
+                            <p>• {invitedUserIds.length} existing user(s) will be notified</p>
+                            <p>• {invitedEmails.length} external email(s) will be notified</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 6 && (
+                  <div className="space-y-6">
                     {/* Show basic errors if any */}
                     {Object.keys(errors).length > 0 && (
                       <div className="bg-red-50 border border-red-200 rounded-md p-4">
@@ -583,6 +786,8 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                         <div><span className="font-medium">Delivery Deadline:</span> {formatDate(watchedValues.delivery_deadline)}</div>
                         <div><span className="font-medium">Items Selected:</span> {selectedItems.length}</div>
                         <div><span className="font-medium">Attachments:</span> {attachedFiles.length}</div>
+                        <div><span className="font-medium">Users Invited:</span> {invitedUserIds.length}</div>
+                        <div><span className="font-medium">External Emails:</span> {invitedEmails.length}</div>
                       </div>
                     </div>
                   </div>
@@ -631,7 +836,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                           {initialData ? 'Updating...' : 'Creating...'}
                         </>
                       ) : (
-                        initialData ? 'Update RFQ' : 'Submit RFQ'
+                        initialData ? 'Update RFQ' : 'Submit'
                       )}
                     </button>
                   ) : (

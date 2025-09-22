@@ -10,7 +10,7 @@ import {
   EyeIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
-import { rfqsAPI } from '../services/api'
+import { rfqsAPI, currencyAPI } from '../services/api'
 import BidEvaluation from '../components/BidEvaluation'
 import { useToast, ToastContainer } from '../components/Toast'
 
@@ -20,11 +20,29 @@ const RFQDetailBuyer = () => {
   const [rfq, setRfq] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('bids')
+  const [currencySymbols, setCurrencySymbols] = useState({})
   const { showToast, removeToast, toasts } = useToast()
 
   useEffect(() => {
     fetchRFQDetails()
+    fetchCurrencySymbols()
   }, [id])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   const fetchRFQDetails = async () => {
     try {
@@ -263,7 +281,7 @@ const RFQDetailBuyer = () => {
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Budget Range</dt>
                   <dd className="text-sm text-gray-900">
-                    ${rfq.budget_min?.toLocaleString()} - ${rfq.budget_max?.toLocaleString()}
+                    {formatCurrency(rfq.budget_min, rfq.currency)} - {formatCurrency(rfq.budget_max, rfq.currency)}
                   </dd>
                 </div>
                 <div>
@@ -276,6 +294,36 @@ const RFQDetailBuyer = () => {
                 </div>
               </dl>
             </div>
+            
+            {/* Attachments */}
+            {rfq.attachments && rfq.attachments.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Attachments</h3>
+                <div className="space-y-2">
+                  {rfq.attachments.map((attachment, index) => {
+                    // Extract filename from path for display
+                    const filename = attachment.split('/').pop();
+                    return (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center">
+                          <DocumentTextIcon className="w-5 h-5 text-gray-400 mr-3" />
+                          <span className="text-sm font-medium text-gray-900">{filename}</span>
+                        </div>
+                        <a
+                          href={`/storage/${attachment}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          download={filename}
+                        >
+                          Download
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Bid Summary</h3>
@@ -380,7 +428,7 @@ const RFQDetailBuyer = () => {
                         {item.quantity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.unit_of_measure}
+                        {item.unit_of_measure && item.unit_of_measure !== 'asdfasdf' ? item.unit_of_measure : 'units'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {item.specifications ? (

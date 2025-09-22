@@ -8,7 +8,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-import { rfqsAPI, bidsAPI } from '../services/api'
+import { rfqsAPI, bidsAPI, currencyAPI } from '../services/api'
 import { useToast, ToastContainer } from './Toast'
 
 const BidSubmissionForm = () => {
@@ -17,6 +17,7 @@ const BidSubmissionForm = () => {
   const [rfq, setRfq] = useState(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [currencySymbols, setCurrencySymbols] = useState({})
   const [formData, setFormData] = useState({
     delivery_time: '',
     terms_conditions: '',
@@ -26,7 +27,24 @@ const BidSubmissionForm = () => {
 
   useEffect(() => {
     fetchRFQDetails()
+    fetchCurrencySymbols()
   }, [id])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   const fetchRFQDetails = async () => {
     try {
@@ -122,7 +140,7 @@ const BidSubmissionForm = () => {
     for (let i = 0; i < formData.items.length; i++) {
       const item = formData.items[i]
       if (!item.unit_price || parseFloat(item.unit_price) <= 0) {
-        showToast(`Please enter a valid unit price for ${item.item_name || 'item ' + (i + 1)}`, 'error')
+        showToast(`Please enter a valid unit price in ${rfq?.currency || 'USD'} for ${item.item_name || 'item ' + (i + 1)}`, 'error')
         return false
       }
     }
@@ -142,6 +160,7 @@ const BidSubmissionForm = () => {
       
       const bidData = {
         rfq_id: parseInt(id),
+        currency: rfq?.currency || 'USD',
         delivery_time: parseInt(formData.delivery_time),
         terms_conditions: formData.terms_conditions,
         items: formData.items.map(item => ({
@@ -268,7 +287,7 @@ const BidSubmissionForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Unit Price ($) *
+                      Unit Price ({rfq?.currency || 'USD'}) *
                     </label>
                     <input
                       type="number"
@@ -283,7 +302,7 @@ const BidSubmissionForm = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Total Price ($)
+                      Total Price ({rfq?.currency || 'USD'})
                     </label>
                     <input
                       type="text"
@@ -315,7 +334,7 @@ const BidSubmissionForm = () => {
             <div className="flex justify-between items-center">
               <span className="text-lg font-medium text-gray-900">Total Bid Amount:</span>
               <span className="text-2xl font-bold text-gray-600">
-                ${calculateTotalAmount().toLocaleString()}
+                {formatCurrency(calculateTotalAmount(), rfq?.currency)}
               </span>
             </div>
           </div>

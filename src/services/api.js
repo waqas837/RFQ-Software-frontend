@@ -1,5 +1,6 @@
 // API Configuration
-const API_BASE_URL = 'https://api.furnitrack.com/api'
+// const API_BASE_URL = 'https://api.furnitrack.com/api'
+const API_BASE_URL = 'http://localhost:8000/api'
 
 // Helper functions
 const getAuthToken = () => localStorage.getItem('authToken')
@@ -182,6 +183,10 @@ export const usersAPI = {
 
   getCompanies: async () => {
     return apiRequest('/companies')
+  },
+
+  getUsersForInvitations: async () => {
+    return apiRequest('/users/for-invitations')
   },
 }
 
@@ -370,10 +375,130 @@ export const rfqsAPI = {
   },
 
   create: async (rfqData) => {
-    return apiRequest('/rfqs', {
-      method: 'POST',
-      body: JSON.stringify(rfqData),
+    // Check if there are file attachments
+    const hasFiles = rfqData.attachments && rfqData.attachments.some(att => att.file);
+    
+    if (hasFiles) {
+      // Use FormData for file uploads
+      const formData = new FormData();
+      
+      // Add all non-file data
+      Object.keys(rfqData).forEach(key => {
+        if (key === 'attachments') {
+          // Add files to FormData
+          rfqData.attachments.forEach((attachment, index) => {
+            if (attachment.file) {
+              formData.append(`attachments[${index}]`, attachment.file);
+            }
+          });
+        } else if (key === 'items') {
+          // Handle items array
+          rfqData.items.forEach((item, index) => {
+            Object.keys(item).forEach(itemKey => {
+              if (Array.isArray(item[itemKey])) {
+                // For arrays, send each element separately
+                item[itemKey].forEach((value, arrayIndex) => {
+                  formData.append(`items[${index}][${itemKey}][${arrayIndex}]`, value);
+                });
+              } else if (item[itemKey] instanceof Date) {
+                formData.append(`items[${index}][${itemKey}]`, item[itemKey].toISOString().split('T')[0]);
+              } else {
+                formData.append(`items[${index}][${itemKey}]`, item[itemKey]);
+              }
+            });
+          });
+        } else if (Array.isArray(rfqData[key])) {
+          // Handle other arrays
+          rfqData[key].forEach((value, index) => {
+            formData.append(`${key}[${index}]`, value);
+          });
+        } else {
+          // Convert dates to ISO string format
+          if (rfqData[key] instanceof Date) {
+            formData.append(key, rfqData[key].toISOString().split('T')[0]);
+          } else {
+            formData.append(key, rfqData[key]);
+          }
+        }
+      });
+      
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/rfqs`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type for FormData - let browser set it with boundary
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create RFQ');
+      }
+      
+      return response.json();
+    } else {
+      // Use regular JSON for non-file requests
+      return apiRequest('/rfqs', {
+        method: 'POST',
+        body: JSON.stringify(rfqData),
+      });
+    }
+  },
+
+  testAuth: async () => {
+    const token = getAuthToken()
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.')
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/rfqs/test-auth`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
     })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Authentication test failed')
+    }
+    
+    return response.json()
+  },
+
+  import: async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const token = getAuthToken()
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.')
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/rfqs/import`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        // Don't set Content-Type for FormData - let browser set it with boundary
+      },
+      body: formData,
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Import failed')
+    }
+    
+    return response.json()
   },
 
   update: async (id, rfqData) => {
@@ -667,6 +792,32 @@ export const notificationsAPI = {
   },
 }
 
+// Currency API
+export const currencyAPI = {
+  getSupportedCurrencies: () => apiRequest('/currencies'),
+  getConversionData: (baseCurrency = 'USD') => apiRequest(`/currencies/conversion-data?base_currency=${baseCurrency}`),
+  convertAmount: (amount, fromCurrency, toCurrency, date = null) => {
+    return apiRequest('/currencies/convert', {
+      method: 'POST',
+      body: JSON.stringify({
+        amount: parseFloat(amount),
+        from_currency: fromCurrency,
+        to_currency: toCurrency,
+        date: date
+      })
+    })
+  },
+  getCurrencySymbols: () => apiRequest('/currencies/symbols'),
+  getExchangeRates: (params = {}) => {
+    const queryParams = new URLSearchParams(params).toString()
+    return apiRequest(`/currencies/rates${queryParams ? `?${queryParams}` : ''}`)
+  },
+  updateExchangeRates: (rates, date = null) => apiRequest('/currencies/rates', {
+    method: 'POST',
+    body: JSON.stringify({ rates, date })
+  })
+}
+
 // Export all APIs
 export default {
   auth: authAPI,
@@ -680,4 +831,5 @@ export default {
   reports: reportsAPI,
   emailTemplates: emailTemplatesAPI,
   notifications: notificationsAPI,
+  currency: currencyAPI,
 }

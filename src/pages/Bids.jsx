@@ -11,7 +11,7 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import Pagination from '../components/Pagination'
-import { bidsAPI } from '../services/api'
+import { bidsAPI, currencyAPI } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const Bids = ({ userRole }) => {
@@ -25,12 +25,30 @@ const Bids = ({ userRole }) => {
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [itemsPerPage] = useState(10)
+  const [currencySymbols, setCurrencySymbols] = useState({})
   
   const { showToast, removeToast, toasts } = useToast()
 
   useEffect(() => {
     fetchBids()
+    fetchCurrencySymbols()
   }, [])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   const fetchBids = async (page = 1) => {
     try {
@@ -219,7 +237,7 @@ const Bids = ({ userRole }) => {
                     )}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        ${bid.total_amount?.toLocaleString() || '0'}
+                        {formatCurrency(bid.total_amount, bid.currency)}
                       </div>
                       <div className="text-sm text-gray-500">
                         {bid.currency || 'USD'}

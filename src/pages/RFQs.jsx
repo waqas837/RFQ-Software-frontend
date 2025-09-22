@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PlusIcon, MagnifyingGlassIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MagnifyingGlassIcon, Cog6ToothIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import RFQWizard from '../components/RFQWizard'
 import WorkflowManager from '../components/WorkflowManager'
 import Pagination from '../components/Pagination'
-import { rfqsAPI, bidsAPI } from '../services/api'
+import ConfirmationModal from '../components/ConfirmationModal'
+import { rfqsAPI, bidsAPI, currencyAPI } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const RFQs = ({ userRole }) => {
@@ -20,20 +21,120 @@ const RFQs = ({ userRole }) => {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
   
+  // Confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [rfqToDelete, setRfqToDelete] = useState(null)
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [itemsPerPage] = useState(10)
+  const [currencySymbols, setCurrencySymbols] = useState({})
+  const [showImportModal, setShowImportModal] = useState(false)
   const { showToast, removeToast, toasts } = useToast()
 
   // Fetch RFQs and user bids on component mount
   useEffect(() => {
     fetchRFQs()
+    fetchCurrencySymbols()
     if (userRole === 'supplier') {
       fetchUserBids()
     }
   }, [userRole])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
+
+  const testAuthentication = async () => {
+    try {
+      const response = await rfqsAPI.testAuth()
+      showToast(`Auth test successful: ${response.message}`, 'success')
+      console.log('Auth test response:', response)
+    } catch (error) {
+      showToast(`Auth test failed: ${error.message}`, 'error')
+      console.error('Auth test error:', error)
+    }
+  }
+
+  const handleFileImport = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    // Check if user is authenticated first
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      showToast('Please log in to import RFQs', 'error')
+      return
+    }
+
+    // Validate file type
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv' // .csv
+    ]
+    
+    if (!allowedTypes.includes(file.type)) {
+      showToast('Please select a valid Excel or CSV file', 'error')
+      return
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('File size must be less than 10MB', 'error')
+      return
+    }
+
+    try {
+      setActionLoading(true)
+      const response = await rfqsAPI.import(file)
+      
+      if (response.success) {
+        showToast('RFQs imported successfully!', 'success')
+        await fetchRFQs() // Refresh the list
+      } else {
+        showToast('Import failed: ' + response.message, 'error')
+      }
+    } catch (error) {
+      console.error('Import error:', error)
+      
+      // Handle specific error messages
+      if (error.message.includes('authentication token')) {
+        showToast('Please log in again to continue', 'error')
+        // Optionally redirect to login
+        setTimeout(() => {
+          localStorage.removeItem('authToken')
+          window.location.href = '/login'
+        }, 2000)
+      } else if (error.message.includes('Unauthenticated')) {
+        showToast('Session expired. Please log in again.', 'error')
+        setTimeout(() => {
+          localStorage.removeItem('authToken')
+          window.location.href = '/login'
+        }, 2000)
+      } else {
+        showToast('Import failed: ' + error.message, 'error')
+      }
+    } finally {
+      setActionLoading(false)
+      // Reset file input
+      event.target.value = ''
+    }
+  }
 
   const fetchRFQs = async (page = 1) => {
     try {
@@ -186,23 +287,30 @@ const RFQs = ({ userRole }) => {
     }
   }
 
-  const handleDeleteRFQ = async (rfqId) => {
-    if (confirm('Are you sure you want to delete this RFQ?')) {
-      try {
-        setActionLoading(true)
-        const response = await rfqsAPI.delete(rfqId)
-        if (response.success) {
-          await fetchRFQs()
-          showToast('RFQ deleted successfully!', 'success')
-        } else {
-          showToast('Failed to delete RFQ: ' + response.message, 'error')
-        }
-      } catch (error) {
-        console.error('Error deleting RFQ:', error)
-        showToast('Error deleting RFQ. Please try again.', 'error')
-      } finally {
-        setActionLoading(false)
+  const handleDeleteRFQ = (rfqId) => {
+    setRfqToDelete(rfqId)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteRFQ = async () => {
+    if (!rfqToDelete) return
+    
+    try {
+      setActionLoading(true)
+      const response = await rfqsAPI.delete(rfqToDelete)
+      if (response.success) {
+        await fetchRFQs()
+        showToast('RFQ deleted successfully!', 'success')
+        setShowDeleteModal(false)
+        setRfqToDelete(null)
+      } else {
+        showToast('Failed to delete RFQ: ' + response.message, 'error')
       }
+    } catch (error) {
+      console.error('Error deleting RFQ:', error)
+      showToast('Error deleting RFQ. Please try again.', 'error')
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -236,18 +344,54 @@ const RFQs = ({ userRole }) => {
             </p>
           </div>
           {(userRole === 'buyer' || userRole === 'admin') && (
-            <button 
-              onClick={() => setIsWizardOpen(true)}
-              disabled={actionLoading}
-              className={`flex items-center px-4 py-2 rounded-md ${
-                actionLoading 
-                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                  : 'bg-gray-600 text-white hover:bg-gray-700'
-              }`}
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Create New RFQ
-            </button>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setIsWizardOpen(true)}
+                disabled={actionLoading}
+                className={`flex items-center px-4 py-2 rounded-md border ${
+                  actionLoading 
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                }`}
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Create New RFQ
+              </button>
+              <button 
+                onClick={() => setShowImportModal(true)}
+                disabled={actionLoading}
+                className={`flex items-center px-4 py-2 rounded-md border ${
+                  actionLoading 
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                }`}
+              >
+                <DocumentTextIcon className="h-5 w-5 mr-2" />
+                Import from Excel
+              </button>
+              <a
+                href="/storage/rfq_template.xlsx"
+                download="rfq_template.xlsx"
+                className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+              >
+                <DocumentTextIcon className="h-5 w-5 mr-2" />
+                Download Template
+              </a>
+              <button 
+                onClick={testAuthentication}
+                className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+              >
+                <DocumentTextIcon className="h-5 w-5 mr-2" />
+                Test Auth
+              </button>
+              <input
+                id="import-file"
+                type="file"
+                accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+                onChange={handleFileImport}
+                className="hidden"
+              />
+            </div>
           )}
         </div>
       </div>
@@ -349,7 +493,7 @@ const RFQs = ({ userRole }) => {
                       {rfq.bids?.length || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${rfq.budget_min ? rfq.budget_min.toLocaleString() : '0'} - ${rfq.budget_max ? rfq.budget_max.toLocaleString() : '0'}
+                      {formatCurrency(rfq.budget_min, rfq.currency)} - {formatCurrency(rfq.budget_max, rfq.currency)}
                     </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
                     <div className="flex justify-center items-center space-x-4 h-full">
@@ -471,6 +615,125 @@ const RFQs = ({ userRole }) => {
         }}
         onStatusChange={handleWorkflowChange}
       />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false)
+          setRfqToDelete(null)
+        }}
+        onConfirm={confirmDeleteRFQ}
+        title="Delete RFQ"
+        message="Are you sure you want to delete this RFQ? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        loading={actionLoading}
+      />
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Import RFQs from Excel</h3>
+                <button
+                  onClick={() => setShowImportModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="mb-6">
+                <h4 className="text-md font-medium text-gray-900 mb-3">Required Format:</h4>
+                <div className="bg-gray-50 p-4 rounded-md text-sm">
+                  <p className="mb-2"><strong>Required Columns:</strong></p>
+                  <ul className="list-disc list-inside mb-3 space-y-1">
+                    <li><code>title</code> - RFQ title (required)</li>
+                    <li><code>description</code> - RFQ description (optional)</li>
+                    <li><code>category</code> - Category name (optional)</li>
+                    <li><code>currency</code> - Currency code: USD, EUR, GBP, etc. (optional)</li>
+                    <li><code>budget_min</code> - Minimum budget (numbers only)</li>
+                    <li><code>budget_max</code> - Maximum budget (numbers only)</li>
+                    <li><code>delivery_date</code> - Format: YYYY-MM-DD</li>
+                    <li><code>bid_deadline</code> - Format: YYYY-MM-DD</li>
+                  </ul>
+                  
+                  <p className="mb-2"><strong>Item Columns (for each item):</strong></p>
+                  <ul className="list-disc list-inside mb-3 space-y-1">
+                    <li><code>item_1_name</code> - Item name (required)</li>
+                    <li><code>item_1_description</code> - Item description</li>
+                    <li><code>item_1_quantity</code> - Quantity (numbers only)</li>
+                    <li><code>item_1_unit</code> - Unit of measure (pcs, kg, etc.)</li>
+                    <li><code>item_1_specifications</code> - Technical specifications</li>
+                    <li><code>item_1_notes</code> - Additional notes</li>
+                  </ul>
+                  
+                  <p className="text-xs text-gray-600">
+                    For multiple items, use item_2_name, item_3_name, etc.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h4 className="text-md font-medium text-gray-900 mb-3">File Requirements:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Supported formats: .xlsx, .xls, .csv</li>
+                  <li>• Maximum file size: 10MB</li>
+                  <li>• Maximum 100 RFQs per file</li>
+                  <li>• Each row = One RFQ</li>
+                  <li>• At least one item required per RFQ</li>
+                  <li>• Excel files (.xlsx, .xls) are fully supported</li>
+                </ul>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-2">
+                  <a
+                    href="/storage/rfq_template.csv"
+                    download="rfq_template.csv"
+                    className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  >
+                    <DocumentTextIcon className="h-5 w-5 mr-2" />
+                    Download CSV Template
+                  </a>
+                  <a
+                    href="/storage/rfq_template.xlsx"
+                    download="rfq_template.xlsx"
+                    className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  >
+                    <DocumentTextIcon className="h-5 w-5 mr-2" />
+                    Download Excel Template
+                  </a>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowImportModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowImportModal(false)
+                      document.getElementById('import-file').click()
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Choose File
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
