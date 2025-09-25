@@ -1,4 +1,5 @@
 import { useEditor, EditorContent } from '@tiptap/react'
+import { useEffect } from 'react'
 import StarterKit from '@tiptap/starter-kit'
 import { 
   BoldIcon, 
@@ -22,6 +23,13 @@ const RichTextEditor = ({ value, onChange, placeholder = "Enter your content her
       },
     },
   })
+
+  // Update editor content when value prop changes
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value || '')
+    }
+  }, [editor, value])
 
   if (!editor) {
     return null

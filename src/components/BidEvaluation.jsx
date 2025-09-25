@@ -11,7 +11,7 @@ import {
 import { bidsAPI, purchaseOrdersAPI } from '../services/api'
 import { useToast, ToastContainer } from './Toast'
 
-const BidEvaluation = ({ rfqId, onAward }) => {
+const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
   const [bids, setBids] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedBid, setSelectedBid] = useState(null)
@@ -19,6 +19,12 @@ const BidEvaluation = ({ rfqId, onAward }) => {
   const [scores, setScores] = useState({})
   const [submitting, setSubmitting] = useState({})
   const { showToast, removeToast, toasts } = useToast()
+
+  // Format currency using RFQ's currency
+  const formatCurrency = (amount, currency = rfq?.currency || 'USD') => {
+    const symbol = currencySymbols?.[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   useEffect(() => {
     loadBids()
@@ -275,7 +281,7 @@ const BidEvaluation = ({ rfqId, onAward }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                       <div className="flex items-center">
                         <CurrencyDollarIcon className="w-4 h-4 mr-2" />
-                        <span>Total: ${bid.total_amount?.toLocaleString()}</span>
+                        <span>Total: {formatCurrency(bid.total_amount)}</span>
                       </div>
                       <div className="flex items-center">
                         <CalendarIcon className="w-4 h-4 mr-2" />
@@ -384,8 +390,8 @@ const BidEvaluation = ({ rfqId, onAward }) => {
                               </div>
                             </td>
                             <td className="px-3 py-2 text-gray-900">{item.quantity}</td>
-                            <td className="px-3 py-2 text-gray-900">${item.unit_price?.toLocaleString()}</td>
-                            <td className="px-3 py-2 text-gray-900">${item.total_price?.toLocaleString()}</td>
+                            <td className="px-3 py-2 text-gray-900">{formatCurrency(item.unit_price)}</td>
+                            <td className="px-3 py-2 text-gray-900">{formatCurrency(item.total_price)}</td>
                           </tr>
                         ))}
                       </tbody>

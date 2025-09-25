@@ -196,7 +196,7 @@ function App() {
               } />
               <Route path="/bids/:id" element={
                 <RoleBasedRoute userRole={userRole} allowedRoles={['admin', 'buyer', 'supplier']}>
-                  <BidDetail />
+                  <BidDetail userRole={userRole} />
                 </RoleBasedRoute>
               } />
               <Route path="/purchase-orders" element={

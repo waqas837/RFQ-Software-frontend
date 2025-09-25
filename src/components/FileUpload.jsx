@@ -36,11 +36,28 @@ const FileUpload = ({ files, onFilesChange, maxFiles = 5, maxSize = 25 * 1024 * 
   })
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes'
+    if (!bytes || bytes === 0 || isNaN(bytes)) return 'Unknown size'
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  const getFileTypeName = (mimeType) => {
+    if (!mimeType) return 'File'
+    
+    const typeMap = {
+      'application/pdf': 'PDF Document',
+      'application/msword': 'Word Document',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+      'application/vnd.ms-excel': 'Excel Spreadsheet',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
+      'image/png': 'PNG Image',
+      'image/jpeg': 'JPEG Image',
+      'image/jpg': 'JPEG Image',
+      'image/gif': 'GIF Image'
+    }
+    return typeMap[mimeType] || mimeType.split('/')[1]?.toUpperCase() || 'File'
   }
 
   return (
@@ -84,14 +101,14 @@ const FileUpload = ({ files, onFilesChange, maxFiles = 5, maxSize = 25 * 1024 * 
                     />
                   ) : (
                     <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
-                      <span className="text-xs text-gray-500">
-                        {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
+                      <span className="text-xs text-gray-500 font-medium">
+                        {getFileTypeName(file.type).split(' ')[0].toUpperCase()}
                       </span>
                     </div>
                   )}
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{getFileTypeName(file.type)} • {formatFileSize(file.size)}</p>
                   </div>
                 </div>
                 <button

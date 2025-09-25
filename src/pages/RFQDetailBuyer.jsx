@@ -260,7 +260,9 @@ const RFQDetailBuyer = () => {
       {/* Tab Content */}
       {activeTab === 'bids' && (
         <BidEvaluation 
-          rfqId={rfq.id} 
+          rfqId={rfq.id}
+          rfq={rfq}
+          currencySymbols={currencySymbols}
           onAward={(bidId) => {
             showToast('Bid awarded successfully', 'success')
             fetchRFQDetails()
@@ -301,8 +303,17 @@ const RFQDetailBuyer = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Attachments</h3>
                 <div className="space-y-2">
                   {rfq.attachments.map((attachment, index) => {
-                    // Extract filename from path for display
-                    const filename = attachment.split('/').pop();
+                    // Handle both string paths and object structures
+                    const filename = typeof attachment === 'string' 
+                      ? attachment.split('/').pop() 
+                      : attachment.name || attachment.path?.split('/').pop() || 'Unknown file';
+                    const filePath = typeof attachment === 'string' 
+                      ? attachment 
+                      : attachment.path || attachment.url;
+                    const downloadUrl = filePath?.startsWith('http') 
+                      ? filePath 
+                      : `/storage/${filePath}`;
+                    
                     return (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
@@ -310,7 +321,7 @@ const RFQDetailBuyer = () => {
                           <span className="text-sm font-medium text-gray-900">{filename}</span>
                         </div>
                         <a
-                          href={`/storage/${attachment}`}
+                          href={downloadUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 text-sm font-medium"

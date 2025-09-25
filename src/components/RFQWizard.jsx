@@ -5,7 +5,9 @@ import * as yup from 'yup'
 import { ChevronLeftIcon, ChevronRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import RichTextEditor from './RichTextEditor'
 import FileUpload from './FileUpload'
-import { itemsAPI, categoriesAPI, usersAPI, currencyAPI } from '../services/api'
+import { itemsAPI, categoriesAPI, usersAPI, currencyAPI, rfqsAPI } from '../services/api'
+import { useToast, ToastContainer } from './Toast'
+import * as XLSX from 'xlsx'
 
 const steps = [
   { id: 1, name: 'Basic Information', description: 'RFQ title and category' },
@@ -23,7 +25,7 @@ const schema = yup.object({
   currency: yup.string().required('Currency is required'),
   budget_min: yup.number().positive('Minimum budget must be positive').required('Minimum budget is required'),
   budget_max: yup.number().positive('Maximum budget must be positive').required('Maximum budget is required'),
-  delivery_deadline: yup.date().min(new Date(), 'Delivery deadline must be after today').required('Delivery deadline is required'),
+  delivery_deadline: yup.date().required('Delivery deadline is required'),
   bidding_deadline: yup.date().required('Bidding deadline is required'),
   terms_conditions: yup.string().nullable(),
   invited_emails: yup.array().of(yup.string().email('Invalid email address')).nullable(),
@@ -68,8 +70,13 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
   const [invitedUserIds, setInvitedUserIds] = useState([])
   const [currencies, setCurrencies] = useState([])
   const [currenciesLoading, setCurrenciesLoading] = useState(false)
+  const [emailFile, setEmailFile] = useState(null)
+  const [emailFileLoading, setEmailFileLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [rfqDataLoading, setRfqDataLoading] = useState(false)
+  const { showToast, removeToast, toasts } = useToast()
   
-  const { register, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm({
+  const { register, handleSubmit, formState: { errors }, watch, setValue, reset, trigger } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
       currency: 'USD',
@@ -80,14 +87,77 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
   // Reset form when initialData changes
   useEffect(() => {
     if (initialData) {
+      // If we have an ID, fetch the complete RFQ data
+      if (initialData.id) {
+        fetchRFQForEdit(initialData.id)
+      } else {
+        // For new RFQs, just use the initialData as is
+        reset({
+          currency: 'USD',
+          ...initialData
+        })
+        setSelectedItems(initialData.items || [])
+        setAttachedFiles(initialData.attachments || [])
+      }
+    } else {
+      // Reset form when modal is closed
       reset({
-        currency: 'USD',
-        ...initialData
+        currency: 'USD'
       })
-      setSelectedItems(initialData.items || [])
-      setAttachedFiles(initialData.attachments || [])
+      setSelectedItems([])
+      setAttachedFiles([])
+      setInvitedEmails([])
+      setInvitedUserIds([])
     }
   }, [initialData, reset])
+
+  // Fetch complete RFQ data for editing
+  const fetchRFQForEdit = async (rfqId) => {
+    try {
+      setRfqDataLoading(true)
+      const response = await rfqsAPI.getById(rfqId)
+      if (response.success) {
+        const rfqData = response.data
+        
+        
+        // Reset form with complete RFQ data
+        reset({
+          title: rfqData.title,
+          description: rfqData.description,
+          category_id: rfqData.category_id,
+          currency: rfqData.currency || 'USD',
+          budget_min: rfqData.budget_min,
+          budget_max: rfqData.budget_max,
+          bidding_deadline: rfqData.bidding_deadline ? rfqData.bidding_deadline.split('T')[0] : '',
+          delivery_deadline: rfqData.delivery_deadline ? rfqData.delivery_deadline.split('T')[0] : '',
+          terms_conditions: rfqData.terms_conditions,
+          specifications: rfqData.specifications || '',
+          notes: rfqData.notes || ''
+        })
+        
+        // Set items and attachments
+        setSelectedItems(rfqData.items || [])
+        setAttachedFiles(rfqData.attachments || [])
+        
+        // Set invited users and emails if available
+        if (rfqData.invited_users) {
+          setInvitedUserIds(rfqData.invited_users.map(user => user.id))
+        }
+        if (rfqData.invited_emails) {
+          setInvitedEmails(rfqData.invited_emails)
+        }
+        
+        // Small delay to ensure form is properly reset
+        setTimeout(() => {
+          setRfqDataLoading(false)
+        }, 100)
+      }
+    } catch (error) {
+      console.error('Error fetching RFQ for edit:', error)
+      showToast('Error loading RFQ data for editing', 'error')
+      setRfqDataLoading(false)
+    }
+  }
 
   // Fetch currencies on component mount
   useEffect(() => {
@@ -106,6 +176,115 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
     } finally {
       setCurrenciesLoading(false)
     }
+  }
+
+  // Handle bulk email import from file
+  const handleEmailFileUpload = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+      'application/vnd.ms-excel', // .xls
+      'text/csv' // .csv
+    ]
+    
+    if (!allowedTypes.includes(file.type)) {
+      showToast('Please select a valid Excel or CSV file', 'error')
+      return
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('File size must be less than 5MB', 'error')
+      return
+    }
+
+    try {
+      setEmailFileLoading(true)
+      const emails = await parseEmailFile(file)
+      
+      if (emails.length > 0) {
+        // Add new emails to existing list (avoid duplicates)
+        const newEmails = emails.filter(email => !invitedEmails.includes(email))
+        setInvitedEmails([...invitedEmails, ...newEmails])
+        showToast(`Successfully imported ${newEmails.length} email addresses`, 'success')
+      } else {
+        showToast('No valid email addresses found in the file', 'warning')
+      }
+    } catch (error) {
+      console.error('Error parsing email file:', error)
+      showToast('Error reading file. Please check the format and try again.', 'error')
+    } finally {
+      setEmailFileLoading(false)
+      // Reset file input
+      event.target.value = ''
+    }
+  }
+
+  // Parse email file (CSV or Excel)
+  const parseEmailFile = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      
+      reader.onload = (e) => {
+        try {
+          const emails = []
+          
+          if (file.type === 'text/csv') {
+            // Parse CSV
+            const content = e.target.result
+            const lines = content.split('\n')
+            lines.forEach(line => {
+              const email = line.trim().replace(/['"]/g, '') // Remove quotes
+              if (email && isValidEmail(email)) {
+                emails.push(email)
+              }
+            })
+          } else {
+            // Parse Excel files using xlsx library
+            const data = new Uint8Array(e.target.result)
+            const workbook = XLSX.read(data, { type: 'array' })
+            const sheetName = workbook.SheetNames[0]
+            const worksheet = workbook.Sheets[sheetName]
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+            
+            // Extract emails from all rows and columns
+            jsonData.forEach(row => {
+              if (Array.isArray(row)) {
+                row.forEach(cell => {
+                  if (cell && typeof cell === 'string') {
+                    const email = cell.trim()
+                    if (isValidEmail(email)) {
+                      emails.push(email)
+                    }
+                  }
+                })
+              }
+            })
+          }
+          
+          resolve(emails)
+        } catch (error) {
+          reject(error)
+        }
+      }
+      
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      
+      if (file.type === 'text/csv') {
+        reader.readAsText(file)
+      } else {
+        reader.readAsArrayBuffer(file)
+      }
+    })
+  }
+
+  // Simple email validation
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
   }
 
   const watchedValues = watch()
@@ -197,8 +376,30 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
     }
   }, [isOpen]);
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < steps.length) {
+      // Check step-specific validations first
+      if (currentStep === 1) {
+        // Validate step 1 fields
+        const isValid = await trigger(['title', 'description', 'category_id'])
+        if (!isValid) {
+          return
+        }
+      } else if (currentStep === 2) {
+        // Check if items are selected
+        if (selectedItems.length === 0) {
+          showToast('Please select at least one item', 'error')
+          return
+        }
+      } else if (currentStep === 4) {
+        // Validate step 4 fields
+        const isValid = await trigger(['currency', 'budget_min', 'budget_max', 'bidding_deadline', 'delivery_deadline'])
+        if (!isValid) {
+          return
+        }
+      }
+      
+      // If we get here, validation passed
       setCurrentStep(currentStep + 1)
     }
   }
@@ -209,52 +410,70 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
     }
   }
 
-  const handleFormSubmit = (data) => {
+  const handleFormSubmit = async (data) => {
     console.log('Form submitted with data:', data);
     console.log('Selected items:', selectedItems);
     
     // Check if items are selected
     if (selectedItems.length === 0) {
-      alert('Please select at least one item before submitting');
+      showToast('Please select at least one item before submitting', 'error');
       return;
     }
     
-    // Format items to match backend expectations exactly
-    const formattedItems = selectedItems.map(item => {
-      const formattedItem = {
-        item_id: item.id, // Backend requires this and it must exist in database
-        quantity: item.quantity || 1,
-        specifications: data.specifications ? [data.specifications] : [], // Must be array
-        notes: data.notes || null
-      };
-      console.log('Formatted item:', formattedItem);
-      return formattedItem;
-    });
+    try {
+      setIsSubmitting(true);
+      
+      // Format items to match backend expectations exactly
+      const formattedItems = selectedItems.map(item => {
+        const formattedItem = {
+          item_id: item.id, // Backend requires this and it must exist in database
+          quantity: item.quantity || 1,
+          specifications: data.specifications ? [data.specifications] : [], // Must be array
+          notes: data.notes || null
+        };
+        console.log('Formatted item:', formattedItem);
+        return formattedItem;
+      });
 
-    const rfqData = {
-      title: data.title,
-      description: data.description,
-      category_id: data.category_id,
-      currency: data.currency,
-      budget_min: parseFloat(data.budget_min),
-      budget_max: parseFloat(data.budget_max),
-      delivery_deadline: data.delivery_deadline,
-      bidding_deadline: data.bidding_deadline,
-      terms_conditions: data.terms_conditions || null,
-      attachments: attachedFiles,
-      items: formattedItems,
-      invited_emails: invitedEmails,
-      invited_user_ids: invitedUserIds
+      // Separate new file uploads from existing attachments
+      const newFileUploads = attachedFiles.filter(file => file.file)
+      const existingAttachments = attachedFiles.filter(file => !file.file && file.path)
+
+      const rfqData = {
+        title: data.title,
+        description: data.description,
+        specifications: data.specifications || null,
+        category_id: data.category_id,
+        currency: data.currency,
+        budget_min: parseFloat(data.budget_min),
+        budget_max: parseFloat(data.budget_max),
+        delivery_deadline: data.delivery_deadline,
+        bidding_deadline: data.bidding_deadline,
+        terms_conditions: data.terms_conditions || null,
+        attachments: newFileUploads, // Only new file uploads
+        existing_attachments: JSON.stringify(existingAttachments), // Existing attachments as JSON string
+        items: formattedItems,
+        invited_emails: invitedEmails,
+        invited_user_ids: invitedUserIds
+      }
+      
+      console.log('Final RFQ data being sent:', rfqData);
+      await onSubmit(rfqData);
+      showToast('RFQ created successfully!', 'success');
+      onClose();
+    } catch (error) {
+      console.error('Error submitting RFQ:', error);
+      showToast('Failed to create RFQ. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    console.log('Final RFQ data being sent:', rfqData);
-    onSubmit(rfqData)
-    onClose()
   }
 
   if (!isOpen) return null
 
   const hasStepErrors = () => {
+    // Only check for errors that would prevent submission
+    // This is used for the submit button, not the next button
     if (currentStep === 1) {
       return !watchedValues.title || !watchedValues.description || !watchedValues.category_id;
     }
@@ -264,10 +483,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
     if (currentStep === 4) {
       return !watchedValues.currency || !watchedValues.budget_min || !watchedValues.budget_max || !watchedValues.bidding_deadline || !watchedValues.delivery_deadline;
     }
-    if (currentStep === 5) {
-      // Invitation step is optional, so no validation needed
-      return false;
-    }
+    // Steps 3, 5, and 6 are optional or review
     return false;
   };
 
@@ -311,39 +527,66 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
+          {/* Loading overlay for RFQ data */}
+          {rfqDataLoading && (
+            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
+                <span className="text-gray-600">Loading RFQ data...</span>
+              </div>
+            </div>
+          )}
           {/* Header */}
-          <div className="bg-white shadow-lg px-6 py-4 border border-gray-200 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">Create New RFQ</h3>
+          <div className="bg-white px-6 py-6 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Create New RFQ</h3>
+                <p className="text-sm text-gray-600 mt-1">Fill in the details to create a new request for quotation</p>
+              </div>
               <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
             
             {/* Progress Steps */}
-            <div className="mt-6">
+            <div className="relative">
               <nav aria-label="Progress">
-                <ol className="flex items-center">
+                <ol className="flex items-center justify-between">
                   {steps.map((step, stepIdx) => (
-                    <li key={step.name} className={`relative ${stepIdx !== steps.length - 1 ? 'pr-8 sm:pr-20' : ''} flex-1`}>
-                      <div className="flex items-center">
-                        <div className={`relative flex h-8 w-8 items-center justify-center rounded-full ${
-                          step.id <= currentStep ? 'bg-gray-600' : 'bg-gray-200'
+                    <li key={step.name} className="flex flex-col items-center flex-1 relative">
+                      <div className="flex flex-col items-center">
+                        <div className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 ${
+                          step.id < currentStep 
+                            ? 'bg-green-500 border-green-500' 
+                            : step.id === currentStep 
+                            ? 'bg-white border-gray-600' 
+                            : 'bg-gray-200 border-gray-400'
                         }`}>
                           {step.id < currentStep ? (
                             <CheckIcon className="h-5 w-5 text-white" />
                           ) : (
                             <span className={`text-sm font-medium ${
-                              step.id === currentStep ? 'text-white' : 'text-gray-500'
+                              step.id === currentStep ? 'text-gray-600' : 'text-gray-500'
                             }`}>
                               {step.id}
                             </span>
                           )}
+                          {/* Connector segment between steps (base) */}
+                          {stepIdx < steps.length - 1 && (
+                            <div className="absolute top-1/2 -translate-y-1/2 left-full ml-4 h-0.5 w-20 bg-gray-300 z-0"></div>
+                          )}
+                          {/* Progress segment overlay for completed steps */}
+                          {step.id < currentStep && stepIdx < steps.length - 1 && (
+                            <div className="absolute top-1/2 -translate-y-1/2 left-full ml-4 h-0.5 w-20 bg-green-500 z-0"></div>
+                          )}
                         </div>
                       </div>
-                      <div className="mt-2">
+                      
+                      <div className="mt-2 text-center">
                         <p className={`text-xs font-medium ${
-                          step.id <= currentStep ? 'text-gray-600' : 'text-gray-500'
+                          step.id < currentStep ? 'text-gray-900' : 
+                          step.id === currentStep ? 'text-gray-900' : 
+                          'text-gray-500'
                         }`}>
                           {step.name}
                         </p>
@@ -357,7 +600,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
 
           {/* Content */}
           <div className="px-6 py-6">
-            <form onSubmit={handleSubmit(handleFormSubmit)}>
+            <form onSubmit={(e) => e.preventDefault()}>
               {/* Step Content */}
               <div className="min-h-[400px]">
                 {currentStep === 1 && (
@@ -367,10 +610,12 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                       <input
                         type="text"
                         {...register('title')}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                        className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                          errors.title ? 'border-red-500' : 'border-gray-300'
+                        }`}
                         placeholder="Enter RFQ title"
                       />
-                      {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>}
+                      {errors.title && <p className="mt-1 text-sm text-red-600">Field required</p>}
                     </div>
 
                     <div>
@@ -383,7 +628,9 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                       ) : (
                         <select
                           {...register('category_id')}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                            errors.category_id ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         >
                           <option value="">Select a category</option>
                           {availableCategories.map((category) => (
@@ -393,7 +640,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                           ))}
                         </select>
                       )}
-                      {errors.category_id && <p className="mt-1 text-sm text-red-600">{errors.category_id.message}</p>}
+                      {errors.category_id && <p className="mt-1 text-sm text-red-600">Field required</p>}
                     </div>
                     
                     <div>
@@ -401,10 +648,12 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                       <textarea
                         {...register('description')}
                         rows={4}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                        className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                          errors.description ? 'border-red-500' : 'border-gray-300'
+                        }`}
                         placeholder="Enter RFQ description"
                       />
-                      {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>}
+                      {errors.description && <p className="mt-1 text-sm text-red-600">Field required</p>}
                     </div>
                   </div>
                 )}
@@ -501,33 +750,15 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
 
                 {currentStep === 4 && (
                   <div className="space-y-6">
-                    {/* Validation Summary */}
-                    {(hasStepErrors() || Object.keys(errors).length > 0) && (
-                      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                        <p className="text-sm font-medium text-red-800 mb-2">Please complete all required fields:</p>
-                        <ul className="text-sm text-red-600 space-y-1">
-                          {!watchedValues.currency && <li>• Currency is required</li>}
-                          {!watchedValues.budget_min && <li>• Minimum Budget is required</li>}
-                          {!watchedValues.budget_max && <li>• Maximum Budget is required</li>}
-                          {!watchedValues.bidding_deadline && <li>• Bidding Deadline is required</li>}
-                          {!watchedValues.delivery_deadline && <li>• Delivery Deadline is required</li>}
-                          {errors.currency && <li>• {errors.currency.message}</li>}
-                          {errors.budget_min && <li>• {errors.budget_min.message}</li>}
-                          {errors.budget_max && <li>• {errors.budget_max.message}</li>}
-                          {errors.delivery_deadline && <li>• {errors.delivery_deadline.message}</li>}
-                          {errors.bidding_deadline && <li>• {errors.bidding_deadline.message}</li>}
-                          {errors.budget_range && <li>• {errors.budget_range.message}</li>}
-                          {errors.deadline_order && <li>• {errors.deadline_order.message}</li>}
-                        </ul>
-                      </div>
-                    )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Currency</label>
                         <select
                           {...register('currency')}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                            errors.currency ? 'border-red-500' : 'border-gray-300'
+                          }`}
                           disabled={currenciesLoading}
                         >
                           <option value="">Select Currency</option>
@@ -537,7 +768,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                             </option>
                           ))}
                         </select>
-                        {errors.currency && <p className="mt-1 text-sm text-red-600">{errors.currency.message}</p>}
+                        {errors.currency && <p className="mt-1 text-sm text-red-600">Field required</p>}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
@@ -546,10 +777,12 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                         <input
                           type="number"
                           {...register('budget_min')}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                            errors.budget_min ? 'border-red-500' : 'border-gray-300'
+                          }`}
                           placeholder="Enter minimum budget"
                         />
-                        {errors.budget_min && <p className="mt-1 text-sm text-red-600">{errors.budget_min.message}</p>}
+                        {errors.budget_min && <p className="mt-1 text-sm text-red-600">Field required</p>}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
@@ -558,10 +791,12 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                         <input
                           type="number"
                           {...register('budget_max')}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                            errors.budget_max ? 'border-red-500' : 'border-gray-300'
+                          }`}
                           placeholder="Enter maximum budget"
                         />
-                        {errors.budget_max && <p className="mt-1 text-sm text-red-600">{errors.budget_max.message}</p>}
+                        {errors.budget_max && <p className="mt-1 text-sm text-red-600">Field required</p>}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Bidding Deadline</label>
@@ -569,9 +804,11 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                           type="date"
                           {...register('bidding_deadline')}
                           min={new Date().toISOString().split('T')[0]}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                            errors.bidding_deadline ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         />
-                        {errors.bidding_deadline && <p className="mt-1 text-sm text-red-600">{errors.bidding_deadline.message}</p>}
+                        {errors.bidding_deadline && <p className="mt-1 text-sm text-red-600">Field required</p>}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Delivery Deadline</label>
@@ -579,9 +816,11 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                           type="date"
                           {...register('delivery_deadline')}
                           min={new Date().toISOString().split('T')[0]}
-                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                          className={`mt-1 block w-full border rounded-md px-3 py-2 ${
+                            errors.delivery_deadline ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         />
-                        {errors.delivery_deadline && <p className="mt-1 text-sm text-red-600">{errors.delivery_deadline.message}</p>}
+                        {errors.delivery_deadline && <p className="mt-1 text-sm text-red-600">Field required</p>}
                       </div>
                     </div>
                     
@@ -660,30 +899,32 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                         {usersLoading ? (
                           <div className="text-sm text-gray-500">Loading users...</div>
                         ) : (
-                          <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-md p-3">
+                          <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
                             {availableUsers.length === 0 ? (
-                              <p className="text-sm text-gray-500">No users available</p>
+                              <p className="text-sm text-gray-500 p-4">No users available</p>
                             ) : (
-                              availableUsers.map((user) => (
-                                <label key={user.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
-                                  <input
-                                    type="checkbox"
-                                    checked={invitedUserIds.includes(user.id)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setInvitedUserIds([...invitedUserIds, user.id])
-                                      } else {
-                                        setInvitedUserIds(invitedUserIds.filter(id => id !== user.id))
-                                      }
-                                    }}
-                                    className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
-                                  />
-                                  <div className="flex-1">
-                                    <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                                    <div className="text-xs text-gray-500">{user.email} • {user.role}</div>
-                                  </div>
-                                </label>
-                              ))
+                              <div className="p-2 space-y-1">
+                                {availableUsers.map((user) => (
+                                  <label key={user.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={invitedUserIds.includes(user.id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setInvitedUserIds([...invitedUserIds, user.id])
+                                        } else {
+                                          setInvitedUserIds(invitedUserIds.filter(id => id !== user.id))
+                                        }
+                                      }}
+                                      className="rounded border-gray-300 text-gray-600 focus:ring-gray-500 flex-shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium text-gray-900 truncate">{user.name}</div>
+                                      <div className="text-xs text-gray-500 truncate">{user.email} • {user.role}</div>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
                             )}
                           </div>
                         )}
@@ -694,6 +935,34 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                           Invite External Email Addresses
                         </label>
+                        
+                        {/* Bulk Import Section */}
+                        <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium text-gray-700">Bulk Import from File</h4>
+                            <span className="text-xs text-gray-500">CSV, XLS, XLSX</span>
+                          </div>
+                          <div className="flex space-x-2">
+                            <input
+                              type="file"
+                              accept=".csv,.xls,.xlsx"
+                              onChange={handleEmailFileUpload}
+                              disabled={emailFileLoading}
+                              className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-600 file:text-white hover:file:bg-gray-700 disabled:opacity-50"
+                            />
+                            {emailFileLoading && (
+                              <div className="flex items-center text-sm text-gray-500">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                                Processing...
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Upload a CSV or Excel file with email addresses (one per line or column)
+                          </p>
+                        </div>
+
+                        {/* Individual Email Input */}
                         <div className="space-y-2">
                           <div className="flex space-x-2">
                             <input
@@ -729,19 +998,35 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                           
                           {/* Display invited emails */}
                           {invitedEmails.length > 0 && (
-                            <div className="space-y-1">
-                              {invitedEmails.map((email, index) => (
-                                <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
-                                  <span className="text-sm text-gray-700">{email}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setInvitedEmails(invitedEmails.filter((_, i) => i !== index))}
-                                    className="text-red-600 hover:text-red-800 text-sm"
-                                  >
-                                    Remove
-                                  </button>
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-gray-700">
+                                  Invited Emails ({invitedEmails.length})
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setInvitedEmails([])}
+                                  className="text-xs text-red-600 hover:text-red-800"
+                                >
+                                  Clear All
+                                </button>
+                              </div>
+                              <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-md">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
+                                  {invitedEmails.map((email, index) => (
+                                    <div key={index} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-xs">
+                                      <span className="text-gray-700 truncate flex-1 mr-2">{email}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setInvitedEmails(invitedEmails.filter((_, i) => i !== index))}
+                                        className="text-red-600 hover:text-red-800 text-xs flex-shrink-0"
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -749,7 +1034,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
 
                       {/* Summary */}
                       {(invitedUserIds.length > 0 || invitedEmails.length > 0) && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 pt mt-5">
                           <h4 className="text-sm font-medium text-blue-800 mb-2">Invitation Summary</h4>
                           <div className="text-sm text-blue-700">
                             <p>• {invitedUserIds.length} existing user(s) will be notified</p>
@@ -775,19 +1060,89 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                       </div>
                     )}
                     
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-gray-900 mb-4">RFQ Summary</h4>
-                      <div className="space-y-3 text-sm">
-                        <div><span className="font-medium">Title:</span> {watchedValues.title}</div>
-                        <div><span className="font-medium">Description:</span> {watchedValues.description}</div>
-                        <div><span className="font-medium">Minimum Budget:</span> ${watchedValues.budget_min}</div>
-                        <div><span className="font-medium">Maximum Budget:</span> ${watchedValues.budget_max}</div>
-                        <div><span className="font-medium">Bidding Deadline:</span> {formatDate(watchedValues.bidding_deadline)}</div>
-                        <div><span className="font-medium">Delivery Deadline:</span> {formatDate(watchedValues.delivery_deadline)}</div>
-                        <div><span className="font-medium">Items Selected:</span> {selectedItems.length}</div>
-                        <div><span className="font-medium">Attachments:</span> {attachedFiles.length}</div>
-                        <div><span className="font-medium">Users Invited:</span> {invitedUserIds.length}</div>
-                        <div><span className="font-medium">External Emails:</span> {invitedEmails.length}</div>
+                    {/* RFQ Review Summary */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-6">Review Your RFQ</h3>
+                      
+                      {/* Basic Information */}
+                      <div className="mb-6">
+                        <h4 className="text-md font-medium text-gray-800 mb-3 border-b border-gray-200 pb-2">Basic Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-600">Title:</span>
+                            <p className="text-gray-900 mt-1">{watchedValues.title}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-600">Category:</span>
+                            <p className="text-gray-900 mt-1">
+                              {availableCategories.find(cat => cat.id === watchedValues.category_id)?.name || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="md:col-span-2">
+                            <span className="font-medium text-gray-600">Description:</span>
+                            <p className="text-gray-900 mt-1">{watchedValues.description}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Budget & Timeline */}
+                      <div className="mb-6">
+                        <h4 className="text-md font-medium text-gray-800 mb-3 border-b border-gray-200 pb-2">Budget & Timeline</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-600">Budget Range:</span>
+                            <p className="text-gray-900 mt-1">
+                              {watchedValues.currency} {watchedValues.budget_min} - {watchedValues.budget_max}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-600">Bidding Deadline:</span>
+                            <p className="text-gray-900 mt-1">{formatDate(watchedValues.bidding_deadline)}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-600">Delivery Deadline:</span>
+                            <p className="text-gray-900 mt-1">{formatDate(watchedValues.delivery_deadline)}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Items */}
+                      <div className="mb-6">
+                        <h4 className="text-md font-medium text-gray-800 mb-3 border-b border-gray-200 pb-2">Selected Items ({selectedItems.length})</h4>
+                        <div className="space-y-2">
+                          {selectedItems.map((item, index) => (
+                            <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-md">
+                              <div>
+                                <p className="font-medium text-gray-900">{item.name}</p>
+                                <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Attachments & Invitations */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="text-md font-medium text-gray-800 mb-3 border-b border-gray-200 pb-2">Attachments ({attachedFiles.length})</h4>
+                          {attachedFiles.length > 0 ? (
+                            <div className="space-y-1">
+                              {attachedFiles.map((file, index) => (
+                                <p key={index} className="text-sm text-gray-600 bg-gray-50 p-2 rounded">• {file.name}</p>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500">No attachments</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-md font-medium text-gray-800 mb-3 border-b border-gray-200 pb-2">Invitations</h4>
+                          <div className="space-y-1 text-sm">
+                            <p className="text-gray-600">• {invitedUserIds.length} existing users</p>
+                            <p className="text-gray-600">• {invitedEmails.length} external emails</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -822,34 +1177,34 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                   
                   {currentStep === steps.length ? (
                     <button
-                      type="submit"
-                      disabled={loading}
+                      type="button"
+                      onClick={handleSubmit(handleFormSubmit)}
+                      disabled={isSubmitting || hasStepErrors()}
                       className={`flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium ${
-                        loading 
+                        isSubmitting || hasStepErrors()
                           ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                           : 'bg-gray-600 text-white hover:bg-gray-700'
                       }`}
                     >
-                      {loading ? (
+                      {isSubmitting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          {initialData ? 'Updating...' : 'Creating...'}
+                          Submitting...
                         </>
                       ) : (
-                        initialData ? 'Update RFQ' : 'Submit'
+                        'Submit'
                       )}
                     </button>
                   ) : (
                     <button
                       type="button"
                       onClick={nextStep}
-                      disabled={hasStepErrors() || loading}
+                      disabled={isSubmitting}
                       className={`flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium ${
-                        hasStepErrors() || loading
+                        isSubmitting
                           ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                           : 'bg-gray-600 text-white hover:bg-gray-700'
                       }`}
-                      title={hasStepErrors() ? 'Please fix all errors before proceeding' : ''}
                     >
                       Next
                       <ChevronRightIcon className="h-4 w-4 ml-2" />
@@ -861,6 +1216,9 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
           </div>
         </div>
       </div>
+      
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   )
 }

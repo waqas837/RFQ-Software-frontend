@@ -5,7 +5,7 @@ import RFQWizard from '../components/RFQWizard'
 import WorkflowManager from '../components/WorkflowManager'
 import Pagination from '../components/Pagination'
 import ConfirmationModal from '../components/ConfirmationModal'
-import { rfqsAPI, bidsAPI, currencyAPI } from '../services/api'
+import { rfqsAPI, bidsAPI, currencyAPI, API_BASE_URL } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const RFQs = ({ userRole }) => {
@@ -59,16 +59,6 @@ const RFQs = ({ userRole }) => {
     return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
   }
 
-  const testAuthentication = async () => {
-    try {
-      const response = await rfqsAPI.testAuth()
-      showToast(`Auth test successful: ${response.message}`, 'success')
-      console.log('Auth test response:', response)
-    } catch (error) {
-      showToast(`Auth test failed: ${error.message}`, 'error')
-      console.error('Auth test error:', error)
-    }
-  }
 
   const handleFileImport = async (event) => {
     const file = event.target.files[0]
@@ -370,20 +360,13 @@ const RFQs = ({ userRole }) => {
                 Import from Excel
               </button>
               <a
-                href="/storage/rfq_template.xlsx"
+                href={`${API_BASE_URL}/rfqs/template/xlsx`}
                 download="rfq_template.xlsx"
                 className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
               >
                 <DocumentTextIcon className="h-5 w-5 mr-2" />
                 Download Template
               </a>
-              <button 
-                onClick={testAuthentication}
-                className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-              >
-                <DocumentTextIcon className="h-5 w-5 mr-2" />
-                Test Auth
-              </button>
               <input
                 id="import-file"
                 type="file"
@@ -695,7 +678,7 @@ const RFQs = ({ userRole }) => {
               <div className="flex justify-between items-center">
                 <div className="flex space-x-2">
                   <a
-                    href="/storage/rfq_template.csv"
+                    href={`${API_BASE_URL}/rfqs/template/csv`}
                     download="rfq_template.csv"
                     className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   >
@@ -703,7 +686,7 @@ const RFQs = ({ userRole }) => {
                     Download CSV Template
                   </a>
                   <a
-                    href="/storage/rfq_template.xlsx"
+                    href={`${API_BASE_URL}/rfqs/template/xlsx`}
                     download="rfq_template.xlsx"
                     className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   >

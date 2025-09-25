@@ -152,12 +152,14 @@ const Bids = ({ userRole }) => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {userRole === 'admin' ? 'All Bids' : 'My Bids'}
+          {userRole === 'admin' ? 'All Bids' : userRole === 'supplier' ? 'My Bids' : 'Bid Evaluation'}
         </h1>
         <p className="text-gray-600">
           {userRole === 'admin' 
             ? 'View and manage all bids from all suppliers' 
-            : 'View and manage all your submitted bids'
+            : userRole === 'supplier'
+            ? 'View and manage all your submitted bids'
+            : 'Evaluate and manage bids submitted by suppliers'
           }
         </p>
       </div>

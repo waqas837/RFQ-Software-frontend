@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL = 'https://api.furnitrack.com/api'
-// const API_BASE_URL = 'http://localhost:8000/api'
+// export const API_BASE_URL = 'http://localhost:8000/api'
 
 // Helper functions
 const getAuthToken = () => localStorage.getItem('authToken')
@@ -22,10 +22,7 @@ const apiRequest = async (endpoint, options = {}) => {
     const response = await fetch(url, config)
     const data = await response.json()
 
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`)
-    }
-
+    // Return the data as-is, let the calling code handle success/error
     return data
   } catch (error) {
     console.error('API Request Error:', error)
@@ -407,6 +404,9 @@ export const rfqsAPI = {
               }
             });
           });
+        } else if (key === 'existing_attachments') {
+          // Handle existing attachments as JSON string
+          formData.append('existing_attachments', rfqData.existing_attachments);
         } else if (Array.isArray(rfqData[key])) {
           // Handle other arrays
           rfqData[key].forEach((value, index) => {
@@ -452,27 +452,6 @@ export const rfqsAPI = {
     }
   },
 
-  testAuth: async () => {
-    const token = getAuthToken()
-    if (!token) {
-      throw new Error('No authentication token found. Please log in again.')
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/rfqs/test-auth`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-    
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Authentication test failed')
-    }
-    
-    return response.json()
-  },
 
   import: async (file) => {
     const formData = new FormData()

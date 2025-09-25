@@ -85,14 +85,14 @@ const Toast = ({ message, type = 'success', onClose }) => {
   if (!isVisible) return null
 
   return (
-    <div className={`max-w-sm w-full ${getBackgroundColor()} border rounded-lg shadow-lg transform transition-all duration-300 ease-in-out`}>
+    <div className={`max-w-md w-full ${getBackgroundColor()} border rounded-lg shadow-lg transform transition-all duration-300 ease-in-out`}>
       <div className="p-4">
         <div className="flex items-start">
           <div className="flex-shrink-0">
             {getIcon()}
           </div>
           <div className="ml-3 flex-1 min-w-0">
-            <p className={`text-sm font-medium ${getTextColor()} truncate`}>
+            <p className={`text-sm font-medium ${getTextColor()} break-words`}>
               {message}
             </p>
           </div>
@@ -116,7 +116,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
 // Toast Container Component
 export const ToastContainer = ({ toasts = [], removeToast }) => {
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-sm px-4 sm:px-0">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 sm:px-0">
       {toasts.map((toast) => (
         <Toast
           key={toast.id}
