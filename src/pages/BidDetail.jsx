@@ -181,7 +181,7 @@ const BidDetail = ({ userRole }) => {
               {bid.items?.map((item, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium text-gray-900">{item.item?.name || 'Unknown Item'}</h3>
+                    <h3 className="font-medium text-gray-900">{item.item_name || 'Unknown Item'}</h3>
                     <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
                   </div>
                   
@@ -284,8 +284,8 @@ const BidDetail = ({ userRole }) => {
                 <p className="font-medium text-gray-900">{bid.rfq?.title}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Company</p>
-                <p className="font-medium text-gray-900">{bid.rfq?.company?.name || 'N/A'}</p>
+                <p className="text-sm text-gray-500">Supplier Company</p>
+                <p className="font-medium text-gray-900">{bid.supplier_company?.name || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Bidding Deadline</p>

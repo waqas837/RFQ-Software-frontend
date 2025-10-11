@@ -23,7 +23,28 @@ import Logo from '../Logo'
 
 const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [user, setUser] = useState(() => {
+    return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
+  })
   const location = useLocation()
+
+  // Listen for authentication changes (like email updates)
+  useEffect(() => {
+    const handleAuthChange = () => {
+      console.log('Sidebar - Received authChange event')
+      const updatedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
+      console.log('Sidebar - Updated user data:', updatedUser)
+      setUser(updatedUser)
+    }
+
+    window.addEventListener('authChange', handleAuthChange)
+    window.addEventListener('storage', handleAuthChange)
+    
+    return () => {
+      window.removeEventListener('authChange', handleAuthChange)
+      window.removeEventListener('storage', handleAuthChange)
+    }
+  }, [])
 
   // Listen for toggle event from header
   useEffect(() => {
@@ -41,7 +62,7 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
         return [
           { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
           { name: 'Notifications', href: '/notifications', icon: BellIcon },
-          { name: 'User Management', href: '/users', icon: UsersIcon },
+          { name: 'User Management', href: '/admin/users', icon: UsersIcon },
           { name: 'Company Management', href: '/companies', icon: BuildingOfficeIcon },
           { name: 'Item Catalog', href: '/items', icon: CubeIcon },
           { name: 'Categories', href: '/categories', icon: TagIcon },
@@ -50,6 +71,8 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
           { name: 'View RFQs', href: '/rfqs', icon: DocumentTextIcon },
           { name: 'View Bids', href: '/bids', icon: ClipboardDocumentListIcon },
           { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
+          { name: 'My Profile', href: '/profile', icon: UserGroupIcon },
+          { name: 'Other Users', href: '/users', icon: UserGroupIcon },
           { name: 'Reports', href: '/reports', icon: ChartBarIcon },
           { name: 'System Settings', href: '/settings', icon: ShieldCheckIcon },
         ]
@@ -61,6 +84,7 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
           { name: 'My Bids', href: '/bids', icon: ClipboardDocumentListIcon },
           { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
           { name: 'My Profile', href: '/profile', icon: UserGroupIcon },
+          { name: 'Other Users', href: '/users', icon: UserGroupIcon },
           { name: 'Reports', href: '/reports', icon: ChartBarIcon },
         ]
       default: // buyer
@@ -73,6 +97,8 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
           { name: 'Item Templates', href: '/item-templates', icon: DocumentTextIcon },
           { name: 'Evaluate Bids', href: '/bids', icon: ClipboardDocumentListIcon },
           { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
+          { name: 'My Profile', href: '/profile', icon: UserGroupIcon },
+          { name: 'Other Users', href: '/users', icon: UserGroupIcon },
           { name: 'Reports', href: '/reports', icon: ChartBarIcon },
           { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
         ]
@@ -82,8 +108,17 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
   const navigation = getNavigation()
 
   const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated')
-    localStorage.removeItem('user')
+    // Clear ALL localStorage items
+    localStorage.clear()
+    
+    // Also clear sessionStorage
+    sessionStorage.clear()
+    
+    // Trigger authentication state update
+    window.dispatchEvent(new Event('storage'))
+    window.dispatchEvent(new Event('authChange'))
+    
+    // Redirect to login
     window.location.href = '/login'
   }
 
@@ -132,16 +167,16 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-gray-700">
-                    {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name?.charAt(0) : 'U'}
+                    {user?.name?.charAt(0) || 'U'}
                   </span>
                 </div>
               </div>
               <div className="ml-3 flex-1">
                 <p className="text-sm font-medium text-gray-900">
-                  {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'User'}
+                  {user?.name || 'User'}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'user@example.com'}
+                  {user?.email || 'user@example.com'}
                 </p>
               </div>
             </div>

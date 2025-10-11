@@ -13,6 +13,7 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline'
 import { purchaseOrdersAPI } from '../services/api'
+import { useToast, ToastContainer } from '../components/Toast'
 
 const PurchaseOrderDetail = () => {
   const { id } = useParams()
@@ -20,6 +21,7 @@ const PurchaseOrderDetail = () => {
   const [purchaseOrder, setPurchaseOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { showToast, removeToast, toasts } = useToast()
   
   // Get user role from localStorage
   const userRole = JSON.parse(localStorage.getItem('user'))?.role
@@ -50,14 +52,14 @@ const PurchaseOrderDetail = () => {
       try {
         const response = await purchaseOrdersAPI.approve(poId)
         if (response.success) {
-          alert('Purchase Order approved successfully!')
+          showToast('Purchase Order approved successfully!', 'success')
           loadPurchaseOrder() // Reload to update status
         } else {
-          alert('Failed to approve PO: ' + response.message)
+          showToast('Failed to approve PO: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error approving PO:', error)
-        alert('Error approving PO. Please try again.')
+        showToast('Error approving PO. Please try again.', 'error')
       }
     }
   }
@@ -67,14 +69,14 @@ const PurchaseOrderDetail = () => {
       try {
         const response = await purchaseOrdersAPI.send(poId)
         if (response.success) {
-          alert('Purchase Order sent to supplier successfully!')
+          showToast('Purchase Order sent to supplier successfully!', 'success')
           loadPurchaseOrder() // Reload to update status
         } else {
-          alert('Failed to send PO to supplier: ' + response.message)
+          showToast('Failed to send PO to supplier: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error sending PO to supplier:', error)
-        alert('Error sending PO to supplier. Please try again.')
+        showToast('Error sending PO to supplier. Please try again.', 'error')
       }
     }
   }
@@ -84,14 +86,14 @@ const PurchaseOrderDetail = () => {
       try {
         const response = await purchaseOrdersAPI.confirm(poId)
         if (response.success) {
-          alert('Purchase Order acknowledged successfully!')
+          showToast('Purchase Order acknowledged successfully!', 'success')
           loadPurchaseOrder() // Reload to update status
         } else {
-          alert('Failed to acknowledge PO: ' + response.message)
+          showToast('Failed to acknowledge PO: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error acknowledging PO:', error)
-        alert('Error acknowledging PO. Please try again.')
+        showToast('Error acknowledging PO. Please try again.', 'error')
       }
     }
   }
@@ -101,14 +103,14 @@ const PurchaseOrderDetail = () => {
       try {
         const response = await purchaseOrdersAPI.update(poId, { status: 'in_progress' })
         if (response.success) {
-          alert('Purchase Order marked as In Progress!')
+          showToast('Purchase Order marked as In Progress!', 'success')
           loadPurchaseOrder() // Reload to update status
         } else {
-          alert('Failed to update PO status: ' + response.message)
+          showToast('Failed to update PO status: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error updating PO status:', error)
-        alert('Error updating PO status. Please try again.')
+        showToast('Error updating PO status. Please try again.', 'error')
       }
     }
   }
@@ -118,14 +120,14 @@ const PurchaseOrderDetail = () => {
       try {
         const response = await purchaseOrdersAPI.update(poId, { status: 'delivered' })
         if (response.success) {
-          alert('Purchase Order marked as Delivered!')
+          showToast('Purchase Order marked as Delivered!', 'success')
           loadPurchaseOrder() // Reload to update status
         } else {
-          alert('Failed to update PO status: ' + response.message)
+          showToast('Failed to update PO status: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error updating PO status:', error)
-        alert('Error updating PO status. Please try again.')
+        showToast('Error updating PO status. Please try again.', 'error')
       }
     }
   }
@@ -193,6 +195,7 @@ const PurchaseOrderDetail = () => {
   }
 
   return (
+    <>
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
@@ -426,6 +429,8 @@ const PurchaseOrderDetail = () => {
         </div>
       </div>
     </div>
+    <ToastContainer />
+    </>
   )
 }
 

@@ -36,7 +36,7 @@ const FileUpload = ({ files, onFilesChange, maxFiles = 5, maxSize = 25 * 1024 * 
   })
 
   const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0 || isNaN(bytes)) return 'Unknown size'
+    if (!bytes || bytes === 0 || isNaN(bytes)) return ''
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -108,7 +108,9 @@ const FileUpload = ({ files, onFilesChange, maxFiles = 5, maxSize = 25 * 1024 * 
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{getFileTypeName(file.type)} • {formatFileSize(file.size)}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {getFileTypeName(file.type)}
+                    </p>
                   </div>
                 </div>
                 <button

@@ -10,7 +10,7 @@ import {
   EyeIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
-import { rfqsAPI, currencyAPI } from '../services/api'
+import { rfqsAPI, currencyAPI, API_BASE_URL } from '../services/api'
 import BidEvaluation from '../components/BidEvaluation'
 import { useToast, ToastContainer } from '../components/Toast'
 
@@ -312,7 +312,7 @@ const RFQDetailBuyer = () => {
                       : attachment.path || attachment.url;
                     const downloadUrl = filePath?.startsWith('http') 
                       ? filePath 
-                      : `/storage/${filePath}`;
+                      : `${API_BASE_URL}/attachments/${filePath}`;
                     
                     return (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -442,13 +442,28 @@ const RFQDetailBuyer = () => {
                         {item.unit_of_measure && item.unit_of_measure !== 'asdfasdf' ? item.unit_of_measure : 'units'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
-                        {item.specifications ? (
-                          <div className="max-w-xs truncate" title={item.specifications}>
-                            {item.specifications}
-                          </div>
-                        ) : (
-                          'No specifications'
-                        )}
+                        <div className="space-y-1">
+                          {item.specifications ? (
+                            <div className="max-w-xs">
+                              <span className="font-medium">Specs:</span> 
+                              <div className="text-sm mt-1" dangerouslySetInnerHTML={{ __html: item.specifications }} />
+                            </div>
+                          ) : (
+                            <div>No specifications</div>
+                          )}
+                          {item.custom_fields && typeof item.custom_fields === 'object' && Object.keys(item.custom_fields).length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-medium text-gray-600 mb-1">Custom Fields:</div>
+                              <div className="space-y-1">
+                                {Object.entries(item.custom_fields).map(([fieldName, fieldValue]) => (
+                                  <div key={fieldName} className="text-xs bg-gray-50 px-2 py-1 rounded">
+                                    <span className="font-medium">{fieldName.replace(/_/g, ' ')}:</span> {fieldValue || 'N/A'}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

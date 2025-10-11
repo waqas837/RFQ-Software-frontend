@@ -10,8 +10,28 @@ import NotificationBell from '../NotificationBell'
 const Header = ({ userRole }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [user, setUser] = useState(() => {
+    return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
+  })
 
-  const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
+  // Listen for authentication changes (like email updates)
+  useEffect(() => {
+    const handleAuthChange = () => {
+      console.log('Header - Received authChange event')
+      const updatedUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
+      console.log('Header - Updated user data:', updatedUser)
+      console.log('Header - New email should be:', updatedUser?.email)
+      setUser(updatedUser)
+    }
+
+    window.addEventListener('authChange', handleAuthChange)
+    window.addEventListener('storage', handleAuthChange)
+    
+    return () => {
+      window.removeEventListener('authChange', handleAuthChange)
+      window.removeEventListener('storage', handleAuthChange)
+    }
+  }, [])
 
   // Close dropdowns when clicking outside
   useEffect(() => {

@@ -19,11 +19,18 @@ import Comparison from './pages/Comparison'
 import Reports from './pages/Reports'
 import PurchaseOrders from './pages/PurchaseOrders'
 import PurchaseOrderDetail from './pages/PurchaseOrderDetail'
+import PODetail from './pages/PODetail'
+import SupplierRegister from './pages/SupplierRegister'
+import InvitationHandler from './pages/InvitationHandler'
 import Users from './pages/Users'
+import UserProfile from './pages/UserProfile'
+import UsersList from './pages/UsersList'
 import Companies from './pages/Companies'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import EmailVerification from './pages/EmailVerification'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import About from './pages/About'
@@ -102,7 +109,10 @@ function App() {
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
           <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
           <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
+          <Route path="/supplier-register" element={<PublicLayout><SupplierRegister /></PublicLayout>} />
+          <Route path="/invitation" element={<PublicLayout><InvitationHandler /></PublicLayout>} />
           <Route path="/forgot-password" element={<PublicLayout><ForgotPassword /></PublicLayout>} />
+          <Route path="/reset-password" element={<PublicLayout><ResetPassword /></PublicLayout>} />
           <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
           <Route path="/privacy" element={<PublicLayout><Privacy /></PublicLayout>} />
           <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
@@ -134,8 +144,16 @@ function App() {
                 <BuyerDashboard />
               } />
               
+              {/* User Profile routes */}
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/users" element={<UsersList />} />
+              <Route path="/users/:id/profile" element={<UserProfile />} />
+              
+              {/* Email verification route (accessible to authenticated users) */}
+              <Route path="/verify-email" element={<EmailVerification />} />
+              
               {/* Admin-only routes */}
-              <Route path="/users" element={
+              <Route path="/admin/users" element={
                 <RoleBasedRoute userRole={userRole} allowedRoles={['admin']}>
                   <Users />
                 </RoleBasedRoute>
@@ -206,7 +224,7 @@ function App() {
               } />
               <Route path="/purchase-orders/:id" element={
                 <RoleBasedRoute userRole={userRole} allowedRoles={['admin', 'buyer', 'supplier']}>
-                  <PurchaseOrderDetail />
+                  <PODetail />
                 </RoleBasedRoute>
               } />
               

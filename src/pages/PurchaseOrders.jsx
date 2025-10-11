@@ -1,7 +1,7 @@
 import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, DocumentTextIcon, CheckIcon, XMarkIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 import Pagination from '../components/Pagination'
-import { purchaseOrdersAPI } from '../services/api'
+import { purchaseOrdersAPI, currencyAPI } from '../services/api'
 
 const PurchaseOrders = ({ userRole }) => {
   const [selectedStatus, setSelectedStatus] = useState('all')
@@ -10,17 +10,20 @@ const PurchaseOrders = ({ userRole }) => {
   const statuses = [
     { id: 'all', name: 'All Status' },
     { id: 'draft', name: 'Draft' },
-    { id: 'pending', name: 'Pending Approval' },
+    { id: 'pending_approval', name: 'Pending Approval' },
     { id: 'approved', name: 'Approved' },
-    { id: 'sent', name: 'Sent to Supplier' },
-    { id: 'confirmed', name: 'Confirmed' },
+    { id: 'rejected', name: 'Rejected' },
+    { id: 'sent_to_supplier', name: 'Sent to Supplier' },
+    { id: 'acknowledged', name: 'Acknowledged' },
     { id: 'in_progress', name: 'In Progress' },
     { id: 'delivered', name: 'Delivered' },
-    { id: 'completed', name: 'Completed' }
+    { id: 'completed', name: 'Completed' },
+    { id: 'cancelled', name: 'Cancelled' }
   ]
 
   const [purchaseOrders, setPurchaseOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [currencySymbols, setCurrencySymbols] = useState({})
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -31,11 +34,30 @@ const PurchaseOrders = ({ userRole }) => {
   // Fetch purchase orders on component mount
   useEffect(() => {
     fetchPurchaseOrders()
+    fetchCurrencySymbols()
   }, [])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   const fetchPurchaseOrders = async (page = 1) => {
     try {
       setLoading(true)
+      console.log('Fetching purchase orders for user role:', userRole)
+      
       const params = {
         page: page,
         per_page: itemsPerPage,
@@ -43,9 +65,12 @@ const PurchaseOrders = ({ userRole }) => {
       if (searchTerm) params.search = searchTerm
       if (selectedStatus !== 'all') params.status = selectedStatus
       
+      console.log('API params:', params)
       const response = await purchaseOrdersAPI.getAll(params)
+      console.log('API response:', response)
       
       if (response.success) {
+        console.log('POs found:', response.data.data?.length || 0)
         setPurchaseOrders(response.data.data || [])
         setTotalPages(response.data?.last_page || 1)
         setTotalItems(response.data?.total || 0)
@@ -246,12 +271,6 @@ const PurchaseOrders = ({ userRole }) => {
               <DocumentTextIcon className="h-5 w-5 mr-2" />
               Export POs
             </button>
-            {userRole !== 'supplier' && (
-              <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Create PO
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -335,7 +354,7 @@ const PurchaseOrders = ({ userRole }) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">${po.total_amount?.toLocaleString()}</div>
+                    <div className="text-sm font-medium text-gray-900">{formatCurrency(po.total_amount, po.currency)}</div>
                     <div className="text-sm text-gray-500">{po.payment_terms || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { 
   ChartBarIcon, 
   DocumentTextIcon, 
@@ -17,6 +18,24 @@ import SupplierDashboard from './SupplierDashboard'
 import { rfqsAPI, bidsAPI, companiesAPI } from '../services/api'
 
 const Dashboard = ({ userRole }) => {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  // Handle redirect after registration
+  useEffect(() => {
+    console.log('Dashboard - location.state:', location.state)
+    if (location.state?.redirectTo) {
+      console.log('Dashboard - redirecting to:', location.state.redirectTo)
+      setTimeout(() => {
+        navigate(location.state.redirectTo, {
+          state: { 
+            message: location.state.message,
+            invitation: location.state.invitation
+          }
+        })
+      }, 1000)
+    }
+  }, [location.state, navigate])
   // Route to appropriate dashboard based on user role
   if (userRole === 'buyer') {
     return <BuyerDashboard userRole={userRole} />

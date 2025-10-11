@@ -429,6 +429,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
           item_id: item.id, // Backend requires this and it must exist in database
           quantity: item.quantity || 1,
           specifications: data.specifications ? [data.specifications] : [], // Must be array
+          custom_fields: item.custom_fields || null, // Include custom fields from item
           notes: data.notes || null
         };
         console.log('Formatted item:', formattedItem);
@@ -731,13 +732,80 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
 
                 {currentStep === 3 && (
                   <div className="space-y-6">
+                    {/* Custom Fields from Selected Items */}
+                    {selectedItems.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-4">
+                          Item Specifications & Custom Fields
+                        </label>
+                        <div className="space-y-6">
+                          {selectedItems.map((item, itemIndex) => (
+                            <div key={itemIndex} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-lg font-medium text-gray-900">{item.name}</h4>
+                                <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                              </div>
+                              
+                              {/* Show item's custom fields if they exist */}
+                              {item.custom_fields && Object.keys(item.custom_fields).length > 0 && (
+                                <div className="space-y-4">
+                                  <h5 className="text-sm font-medium text-gray-700">Custom Fields:</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {Object.entries(item.custom_fields).map(([fieldName, fieldValue]) => (
+                                      <div key={fieldName} className="bg-gray-50 p-3 rounded-md">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                          {fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </label>
+                                        <p className="text-sm text-gray-900">{fieldValue || 'N/A'}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Show item's specifications if they exist */}
+                              {item.specifications && Object.keys(item.specifications).length > 0 && (
+                                <div className="space-y-4 mt-4">
+                                  <h5 className="text-sm font-medium text-gray-700">Specifications:</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {Object.entries(item.specifications).map(([specName, specValue]) => (
+                                      <div key={specName} className="bg-blue-50 p-3 rounded-md">
+                                        <label className="block text-xs font-medium text-blue-600 mb-1">
+                                          {specName}
+                                        </label>
+                                        <p className="text-sm text-blue-900">{specValue}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Show message if no custom fields or specifications */}
+                              {(!item.custom_fields || Object.keys(item.custom_fields).length === 0) && 
+                               (!item.specifications || Object.keys(item.specifications).length === 0) && (
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                                  <p className="text-sm text-yellow-800">
+                                    No custom fields or specifications defined for this item.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* General Specifications */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Specifications</label>
+                      <label className="block text-sm font-medium text-gray-700">Additional Specifications</label>
+                      <p className="text-sm text-gray-500 mb-3">Add any additional specifications or requirements</p>
                       <RichTextEditor
                         value={watchedValues.specifications || ''}
                         onChange={(value) => setValue('specifications', value)}
                       />
                     </div>
+                    
+                    {/* Attachments */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Attachments</label>
                       <FileUpload
@@ -1075,7 +1143,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                           <div>
                             <span className="font-medium text-gray-600">Category:</span>
                             <p className="text-gray-900 mt-1">
-                              {availableCategories.find(cat => cat.id === watchedValues.category_id)?.name || 'N/A'}
+                              {availableCategories.find(cat => cat.id == watchedValues.category_id)?.name || 'N/A'}
                             </p>
                           </div>
                           <div className="md:col-span-2">
@@ -1109,13 +1177,49 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                       {/* Items */}
                       <div className="mb-6">
                         <h4 className="text-md font-medium text-gray-800 mb-3 border-b border-gray-200 pb-2">Selected Items ({selectedItems.length})</h4>
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                           {selectedItems.map((item, index) => (
-                            <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-md">
-                              <div>
-                                <p className="font-medium text-gray-900">{item.name}</p>
-                                <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                            <div key={index} className="bg-gray-50 p-4 rounded-md">
+                              <div className="flex justify-between items-start mb-3">
+                                <div>
+                                  <p className="font-medium text-gray-900">{item.name}</p>
+                                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                                </div>
                               </div>
+                              
+                              {/* Show item's custom fields if they exist */}
+                              {item.custom_fields && Object.keys(item.custom_fields).length > 0 && (
+                                <div className="mt-3">
+                                  <h5 className="text-sm font-medium text-gray-700 mb-2">Custom Fields:</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {Object.entries(item.custom_fields).map(([fieldName, fieldValue]) => (
+                                      <div key={fieldName} className="bg-white p-2 rounded border">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                          {fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </label>
+                                        <p className="text-sm text-gray-900">{fieldValue || 'N/A'}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Show item's specifications if they exist */}
+                              {item.specifications && Object.keys(item.specifications).length > 0 && (
+                                <div className="mt-3">
+                                  <h5 className="text-sm font-medium text-gray-700 mb-2">Specifications:</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {Object.entries(item.specifications).map(([specName, specValue]) => (
+                                      <div key={specName} className="bg-blue-50 p-2 rounded border">
+                                        <label className="block text-xs font-medium text-blue-600 mb-1">
+                                          {specName}
+                                        </label>
+                                        <p className="text-sm text-blue-900">{specValue}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>

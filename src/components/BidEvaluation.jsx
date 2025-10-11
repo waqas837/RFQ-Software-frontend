@@ -209,22 +209,26 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
         })
         
         if (response.success) {
-          showToast('Purchase Order generated successfully', 'success')
-          // Refresh bids to update the purchase_order_id
-          loadBids()
-          // Redirect to PO detail page
-          window.open(`/purchase-orders/${response.data.id}`, '_blank')
-        } else if (response.message && response.message.includes('already exists')) {
-          // Handle case where PO already exists - treat as success
-          showToast('Purchase Order already exists for this bid', 'info')
-          // Refresh bids to show correct button state
-          loadBids()
+          if (response.message && response.message.includes('already exists')) {
+            // Handle case where PO already exists - treat as success
+            showToast('Purchase Order already exists - auto-generated when bid was awarded', 'info')
+            // Refresh bids to show correct button state
+            loadBids()
+            // Redirect to existing PO detail page
+            window.open(`/purchase-orders/${response.data.id}`, '_blank')
+          } else {
+            showToast('Purchase Order generated successfully!', 'success')
+            // Refresh bids to update the purchase_order_id
+            loadBids()
+            // Redirect to PO detail page
+            window.open(`/purchase-orders/${response.data.id}`, '_blank')
+          }
         } else {
-          showToast('Failed to generate Purchase Order', 'error')
+          showToast('Failed to generate Purchase Order: ' + (response.message || 'Unknown error'), 'error')
         }
       } catch (error) {
         console.error('Error generating PO:', error)
-        showToast('Error generating Purchase Order', 'error')
+        showToast('Error generating Purchase Order: ' + error.message, 'error')
       } finally {
         setSubmitting(prev => ({ ...prev, [bidId]: false }))
       }
@@ -412,7 +416,7 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
                   </div>
                   
                   <div className="flex space-x-2">
-                    {(bid.status === 'submitted' || bid.status === 'under_review' || !bid.status) && (
+{(bid.status === 'submitted' || bid.status === 'under_review' || !bid.status) && bid.status !== 'awarded' && (
                       <>
                         {(!bid.technical_score && !bid.commercial_score && !bid.delivery_score) && (
                           <button
@@ -441,19 +445,33 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
                           Awarded
                         </span>
                         {bid.purchase_order ? (
-                          <span className="flex items-center px-4 py-2 bg-gray-100 text-gray-800 rounded-md">
-                            <DocumentTextIcon className="w-4 h-4 mr-2" />
-                            PO Generated
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-md">
+                              <CheckCircleIcon className="w-4 h-4 mr-2" />
+                              PO Auto-Generated
+                            </span>
+                            <button
+                              onClick={() => window.open(`/purchase-orders/${bid.purchase_order.id}`, '_blank')}
+                              className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                            >
+                              <DocumentTextIcon className="w-4 h-4 mr-1" />
+                              View PO
+                            </button>
+                          </div>
                         ) : (
-                          <button
-                            onClick={() => handleGeneratePO(bid.id)}
-                            disabled={submitting[bid.id]}
-                            className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <DocumentTextIcon className="w-4 h-4 mr-2" />
-                            Generate PO
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleGeneratePO(bid.id)}
+                              disabled={submitting[bid.id]}
+                              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <DocumentTextIcon className="w-4 h-4 mr-2" />
+                              {submitting[bid.id] ? 'Generating...' : 'Generate PO'}
+                            </button>
+                            <span className="text-xs text-gray-500">
+                              (Auto-generated when awarded)
+                            </span>
+                          </div>
                         )}
                       </div>
                     )}

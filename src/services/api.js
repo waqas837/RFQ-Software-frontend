@@ -1,17 +1,29 @@
 // API Configuration
-export const API_BASE_URL = 'https://api.furnitrack.com/api'
-// export const API_BASE_URL = 'http://localhost:8000/api'
+// export const API_BASE_URL = 'https://api.furnitrack.com/api'
+export const API_BASE_URL = 'http://localhost:8000/api'
 
 // Helper functions
-const getAuthToken = () => localStorage.getItem('authToken')
+const getAuthToken = () => {
+  const token = localStorage.getItem('authToken')
+  console.log('Getting auth token:', token)
+  console.log('Token exists:', !!token)
+  console.log('Token length:', token ? token.length : 0)
+  console.log('All localStorage keys:', Object.keys(localStorage))
+  return token
+}
 
-const getAuthHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${getAuthToken()}`,
-  'Accept': 'application/json',
-})
+const getAuthHeaders = () => {
+  const token = getAuthToken()
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/json',
+  }
+  console.log('API Headers:', headers)
+  return headers
+}
 
-const apiRequest = async (endpoint, options = {}) => {
+export const apiRequest = async (endpoint, options = {}) => {
   try {
     const url = `${API_BASE_URL}${endpoint}`
     const config = {
@@ -19,13 +31,23 @@ const apiRequest = async (endpoint, options = {}) => {
       ...options,
     }
 
+    console.log('Making API request to:', url)
+    console.log('With config:', config)
+    console.log('Authorization header:', config.headers.Authorization)
+
     const response = await fetch(url, config)
+    
+    console.log('Response status:', response.status)
+    console.log('Response headers:', response.headers)
+    
     const data = await response.json()
+    console.log('API Response:', data)
 
     // Return the data as-is, let the calling code handle success/error
     return data
   } catch (error) {
     console.error('API Request Error:', error)
+    console.error('Error details:', error.message)
     throw error
   }
 }
@@ -184,6 +206,42 @@ export const usersAPI = {
 
   getUsersForInvitations: async () => {
     return apiRequest('/users/for-invitations')
+  },
+
+  // Profile management
+  getProfile: async () => {
+    return apiRequest('/profile')
+  },
+
+  updateProfile: async (profileData) => {
+    return apiRequest('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    })
+  },
+
+  requestEmailUpdate: async (newEmail) => {
+    console.log('API - requestEmailUpdate called with:', newEmail)
+    return apiRequest('/profile/request-email-update', {
+      method: 'POST',
+      body: JSON.stringify({ new_email: newEmail }),
+    })
+  },
+
+  verifyEmailUpdate: async (token) => {
+    console.log('API - verifyEmailUpdate called with token:', token)
+    return apiRequest('/profile/verify-email-update', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    })
+  },
+
+  getOtherUsers: async () => {
+    return apiRequest('/users/others')
+  },
+
+  getUserProfile: async (id) => {
+    return apiRequest(`/users/${id}/profile`)
   },
 }
 
@@ -647,6 +705,13 @@ export const reportsAPI = {
   getCostSavings: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString()
     return apiRequest(`/reports/cost-savings?${queryString}`)
+  },
+
+  export: async (data) => {
+    return apiRequest('/reports/export', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   },
 }
 

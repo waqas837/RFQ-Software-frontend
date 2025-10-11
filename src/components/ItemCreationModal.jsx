@@ -96,9 +96,9 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
       setSelectedTemplate(template)
       
       // Initialize custom fields for the selected template
-      if (template && template.fields) {
+      if (template && template.field_definitions) {
         const customFields = {}
-        template.fields.forEach(field => {
+        template.field_definitions.forEach(field => {
           customFields[field.name] = field.default_value || ''
         })
         setFormData(prev => ({
@@ -246,10 +246,10 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
               ))}
             </select>
             {templatesLoading && (
-              <p className="text-sm text-gray-500 mt-1 flex items-center">
+              <div className="text-sm text-gray-500 mt-1 flex items-center">
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                 Loading templates...
-              </p>
+              </div>
             )}
             {selectedTemplate && !templatesLoading && (
               <p className="text-sm text-gray-600 mt-1">
@@ -301,16 +301,16 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
           </div>
 
           {/* Custom Fields from Template */}
-          {selectedTemplate && selectedTemplate.fields && selectedTemplate.fields.length > 0 && (
+          {selectedTemplate && selectedTemplate.field_definitions && selectedTemplate.field_definitions.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Custom Fields from Template
               </label>
               <div className="space-y-4">
-                {selectedTemplate.fields.map((field, index) => (
+                {selectedTemplate.field_definitions.map((field, index) => (
                   <div key={index}>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
-                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                      {field.name} {field.required && <span className="text-red-500">*</span>}
                     </label>
                     {field.type === 'text' && (
                       <input
@@ -318,7 +318,7 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
                         value={formData.custom_fields[field.name] || ''}
                         onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                        placeholder={field.placeholder || `Enter ${field.name.toLowerCase()}`}
                         required={field.required}
                       />
                     )}
@@ -328,7 +328,7 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
                         value={formData.custom_fields[field.name] || ''}
                         onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                        placeholder={field.placeholder || `Enter ${field.name.toLowerCase()}`}
                         required={field.required}
                       />
                     )}
@@ -338,7 +338,7 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
                         value={formData.custom_fields[field.name] || ''}
                         onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                        placeholder={field.placeholder || `Enter ${field.name.toLowerCase()}`}
                         required={field.required}
                       />
                     )}
@@ -358,7 +358,7 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
                         required={field.required}
                       >
-                        <option value="">Select {field.label}</option>
+                        <option value="">Select {field.name}</option>
                         {field.options && field.options.map((option, optIndex) => (
                           <option key={optIndex} value={option}>
                             {option}
@@ -375,7 +375,7 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
                           className="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded"
                         />
                         <label className="ml-2 text-sm text-gray-700">
-                          {field.label}
+                          {field.name}
                         </label>
                       </div>
                     )}
@@ -385,7 +385,7 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
                         onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                        placeholder={field.placeholder || `Enter ${field.name.toLowerCase()}`}
                         required={field.required}
                       />
                     )}

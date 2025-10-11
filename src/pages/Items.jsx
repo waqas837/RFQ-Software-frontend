@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { itemsAPI } from '../services/api'
 import ItemCreationModal from '../components/ItemCreationModal'
 import ItemEditModal from '../components/ItemEditModal'
+import ItemImportModal from '../components/ItemImportModal'
+import ItemExportModal from '../components/ItemExportModal'
 import ConfirmationModal from '../components/ConfirmationModal'
 import { useToast, ToastContainer } from '../components/Toast'
 
@@ -14,6 +16,8 @@ const Items = () => {
   const [loading, setLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState(null)
@@ -148,11 +152,17 @@ const Items = () => {
             <p className="text-gray-600">Manage your item catalog with dynamic fields</p>
           </div>
           <div className="flex space-x-3">
-            <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+            <button 
+              onClick={() => setIsImportModalOpen(true)}
+              className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
               <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
               Import
             </button>
-            <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+            <button 
+              onClick={() => setIsExportModalOpen(true)}
+              className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
               <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
               Export
             </button>
@@ -365,6 +375,21 @@ const Items = () => {
         cancelText="Cancel"
         type="danger"
         loading={actionLoading}
+      />
+
+      {/* Import Modal */}
+      <ItemImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={fetchItems}
+        categories={categories.filter(cat => cat.id !== 'all')}
+      />
+
+      {/* Export Modal */}
+      <ItemExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        categories={categories.filter(cat => cat.id !== 'all')}
       />
 
       {/* Toast Container */}

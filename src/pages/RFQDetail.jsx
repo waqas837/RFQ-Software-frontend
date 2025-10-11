@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { 
   ArrowLeftIcon, 
   DocumentTextIcon, 
@@ -10,22 +10,30 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-import { rfqsAPI, bidsAPI, currencyAPI } from '../services/api'
+import { rfqsAPI, bidsAPI, currencyAPI, API_BASE_URL } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const RFQDetail = ({ userRole }) => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [rfq, setRfq] = useState(null)
   const [loading, setLoading] = useState(true)
   const [existingBid, setExistingBid] = useState(null)
   const [currencySymbols, setCurrencySymbols] = useState({})
+  const [invitationMessage, setInvitationMessage] = useState(null)
   const { showToast, removeToast, toasts } = useToast()
 
   useEffect(() => {
     fetchRFQDetails()
     fetchCurrencySymbols()
-  }, [id])
+    
+    // Check for invitation context
+    if (location.state?.message) {
+      setInvitationMessage(location.state.message)
+      showToast(location.state.message, 'success')
+    }
+  }, [id, location.state])
 
   const fetchCurrencySymbols = async () => {
     try {
@@ -255,12 +263,23 @@ const RFQDetail = ({ userRole }) => {
                   {item.item_description && (
                     <p className="text-gray-600 text-sm mb-2">{item.item_description}</p>
                   )}
-                  {item.specifications && item.specifications.length > 0 && (
+                  {item.specifications && (
                     <div className="mt-2">
                       <h4 className="text-sm font-medium text-gray-700 mb-1">Specifications:</h4>
-                      <div className="text-sm text-gray-600">
-                        {item.specifications.map((spec, specIndex) => (
-                          <div key={specIndex} dangerouslySetInnerHTML={{ __html: spec }} />
+                      <div className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: item.specifications }} />
+                    </div>
+                  )}
+                  {item.custom_fields && typeof item.custom_fields === 'object' && Object.keys(item.custom_fields).length > 0 && (
+                    <div className="mt-2">
+                      <h4 className="text-sm font-medium text-gray-700 mb-1">Custom Fields:</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {Object.entries(item.custom_fields).map(([fieldName, fieldValue]) => (
+                          <div key={fieldName} className="bg-gray-50 p-2 rounded-md">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              {fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </label>
+                            <p className="text-sm text-gray-900">{fieldValue || 'N/A'}</p>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -348,7 +367,7 @@ const RFQDetail = ({ userRole }) => {
                     : attachment.path || attachment.url;
                   const downloadUrl = filePath?.startsWith('http') 
                     ? filePath 
-                    : `/storage/${filePath}`;
+                    : `${API_BASE_URL}/attachments/${filePath}`;
                   
                   return (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

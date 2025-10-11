@@ -1,21 +1,33 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { authAPI } from '../services/api'
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
+    setError('')
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await authAPI.forgotPassword(email)
+      
+      if (response.success) {
+        setIsSubmitted(true)
+      } else {
+        setError(response.message || 'Failed to send reset email')
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error)
+      setError('Failed to send reset email. Please try again.')
+    } finally {
       setIsLoading(false)
-      setIsSubmitted(true)
-    }, 2000)
+    }
   }
 
   if (isSubmitted) {
@@ -110,10 +122,13 @@ const ForgotPassword = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                                     className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                   placeholder="Enter your email"
                 />
               </div>
+              {error && (
+                <p className="mt-2 text-sm text-red-600">{error}</p>
+              )}
             </div>
 
             <div>
