@@ -245,7 +245,7 @@ const Reports = ({ userRole }) => {
         return
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/reports/export`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://api.furnitrack.com/api'}/reports/export`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

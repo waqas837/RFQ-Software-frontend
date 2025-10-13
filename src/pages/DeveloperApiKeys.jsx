@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { KeyIcon, PlusIcon, TrashIcon, EyeIcon, EyeSlashIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline'
 import { useToast } from '../components/Toast'
+import { API_BASE_URL } from '../services/api'
 
 const DeveloperApiKeys = () => {
   const { showToast } = useToast()
@@ -23,7 +24,7 @@ const DeveloperApiKeys = () => {
   const fetchApiKeys = async () => {
     try {
       const token = localStorage.getItem('authToken')
-      const response = await fetch('http://localhost:8000/api/api-keys', {
+      const response = await fetch('${API_BASE_URL}/api-keys', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -49,7 +50,7 @@ const DeveloperApiKeys = () => {
 
     try {
       const token = localStorage.getItem('authToken')
-      const response = await fetch('http://localhost:8000/api/api-keys', {
+      const response = await fetch('${API_BASE_URL}/api-keys', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -84,7 +85,7 @@ const DeveloperApiKeys = () => {
 
     try {
       const token = localStorage.getItem('authToken')
-      const response = await fetch(`http://localhost:8000/api/api-keys/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api-keys/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

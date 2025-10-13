@@ -35,7 +35,7 @@ const DeveloperApiDocs = () => {
           <InformationCircleIcon className="h-5 w-5 text-blue-500 mr-2" />
           <h3 className="text-sm font-medium text-blue-800">Base URL</h3>
         </div>
-        <p className="mt-1 text-sm text-blue-700 font-mono">https://api.simplyprocure.com/api</p>
+        <p className="mt-1 text-sm text-blue-700 font-mono">https://api.furnitrack.com/api</p>
       </div>
 
       <div>
@@ -196,7 +196,7 @@ const DeveloperApiDocs = () => {
           <div className="bg-gray-900 rounded-lg p-4">
             <pre className="text-green-400 text-sm overflow-x-auto">
 {`// Create a new RFQ
-const response = await fetch('https://api.simplyprocure.com/api/rfqs', {
+const response = await fetch('https://api.furnitrack.com/api/rfqs', {
   method: 'POST',
   headers: {
     'Authorization': 'Bearer sp_your_api_key_here',
@@ -236,7 +236,7 @@ headers = {
 }
 
 response = requests.get(
-    'https://api.simplyprocure.com/api/rfqs',
+    'https://api.furnitrack.com/api/rfqs',
     headers=headers
 )
 
@@ -252,7 +252,7 @@ print(f"Found {len(rfqs['data'])} RFQs")`}
           <div className="bg-gray-900 rounded-lg p-4">
             <pre className="text-green-400 text-sm overflow-x-auto">
 {`# Submit a bid
-curl -X POST https://api.simplyprocure.com/api/bids \\
+curl -X POST https://api.furnitrack.com/api/bids \\
   -H "Authorization: Bearer sp_your_api_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{

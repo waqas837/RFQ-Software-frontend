@@ -185,7 +185,7 @@ const APIDocumentation = () => {
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 Live API
               </span>
-              <span className="text-sm text-gray-500">Base URL: https://api.simplyprocure.com/api</span>
+              <span className="text-sm text-gray-500">Base URL: https://api.furnitrack.com/api</span>
             </div>
           </div>
         </div>
@@ -257,7 +257,7 @@ const APIDocumentation = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <h3 className="font-semibold text-blue-900 mb-2">Base URL</h3>
-                      <code className="text-blue-800">https://api.simplyprocure.com/api</code>
+                      <code className="text-blue-800">https://api.furnitrack.com/api</code>
                     </div>
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <h3 className="font-semibold text-green-900 mb-2">Authentication</h3>
@@ -302,7 +302,7 @@ const APIDocumentation = () => {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h3 className="font-semibold text-blue-900 mb-2">Example Request</h3>
                     <pre className="text-blue-800 text-sm overflow-x-auto">
-{`curl -X GET "https://api.simplyprocure.com/api/items" \\
+{`curl -X GET "https://api.furnitrack.com/api/items" \\
   -H "Authorization: Bearer YOUR_TOKEN" \\
   -H "Accept: application/json"`}
                     </pre>
