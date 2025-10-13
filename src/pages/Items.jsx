@@ -1,4 +1,4 @@
-import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, DocumentArrowDownIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, DocumentArrowDownIcon, DocumentArrowUpIcon, PhotoIcon, DocumentIcon, PaperClipIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 import { itemsAPI } from '../services/api'
 import ItemCreationModal from '../components/ItemCreationModal'
@@ -27,7 +27,7 @@ const Items = () => {
   const fetchItems = async () => {
     try {
       setLoading(true)
-      const response = await itemsAPI.getAll()
+      const response = await itemsAPI.getAll({ include: 'attachments' })
       console.log('Items API response:', response) // Debug log
       
       if (response.success) {
@@ -240,6 +240,9 @@ const Items = () => {
                     Unit
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Attachments
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -272,6 +275,31 @@ const Items = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{item.unit_of_measure || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-1">
+                        {item.attachments && item.attachments.length > 0 ? (
+                          <>
+                            {item.attachments.slice(0, 3).map((attachment, index) => (
+                              <div key={attachment.id} className="flex items-center">
+                                {attachment.file_type === 'image' ? (
+                                  <PhotoIcon className="h-4 w-4 text-blue-500" />
+                                ) : (
+                                  <DocumentIcon className="h-4 w-4 text-gray-500" />
+                                )}
+                                {attachment.is_primary && (
+                                  <span className="ml-1 text-xs text-blue-600">★</span>
+                                )}
+                              </div>
+                            ))}
+                            {item.attachments.length > 3 && (
+                              <span className="text-xs text-gray-500">+{item.attachments.length - 3}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-400">No files</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

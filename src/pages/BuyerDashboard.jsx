@@ -146,7 +146,13 @@ const BuyerDashboard = ({ userRole }) => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total RFQs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalRfqs}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.totalRfqs}</p>
+              )}
             </div>
           </div>
         </div>
@@ -182,7 +188,13 @@ const BuyerDashboard = ({ userRole }) => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active RFQs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeRfqs}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.activeRfqs}</p>
+              )}
             </div>
           </div>
         </div>
@@ -194,7 +206,13 @@ const BuyerDashboard = ({ userRole }) => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Bids</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalBids}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.totalBids}</p>
+              )}
             </div>
           </div>
         </div>

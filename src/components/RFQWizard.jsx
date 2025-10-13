@@ -445,7 +445,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
         description: data.description,
         specifications: data.specifications || null,
         category_id: data.category_id,
-        currency: data.currency,
+        currency: data.currency || 'USD', // Ensure currency is set
         budget_min: parseFloat(data.budget_min),
         budget_max: parseFloat(data.budget_max),
         delivery_deadline: data.delivery_deadline,
@@ -459,6 +459,8 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
       }
       
       console.log('Final RFQ data being sent:', rfqData);
+      console.log('Currency value:', data.currency, 'Type:', typeof data.currency);
+      console.log('Bidding deadline:', data.bidding_deadline, 'Delivery deadline:', data.delivery_deadline);
       await onSubmit(rfqData);
       showToast('RFQ created successfully!', 'success');
       onClose();
@@ -482,7 +484,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
       return selectedItems.length === 0;
     }
     if (currentStep === 4) {
-      return !watchedValues.currency || !watchedValues.budget_min || !watchedValues.budget_max || !watchedValues.bidding_deadline || !watchedValues.delivery_deadline;
+      return !watchedValues.currency || watchedValues.currency === '' || !watchedValues.budget_min || !watchedValues.budget_max || !watchedValues.bidding_deadline || !watchedValues.delivery_deadline;
     }
     // Steps 3, 5, and 6 are optional or review
     return false;
@@ -526,7 +528,9 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-full items-center justify-center p-4">
+      {/* Blurred background overlay */}
+      <div className="fixed inset-0 backdrop-blur-md bg-transparent" />
+      <div className="flex min-h-full items-center justify-center p-4 relative z-10">
         <div className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
           {/* Loading overlay for RFQ data */}
           {rfqDataLoading && (
@@ -763,6 +767,220 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                                 </div>
                               )}
                               
+                              {/* Show item's template custom fields if they exist */}
+                              {item.template && item.template.field_definitions && item.template.field_definitions.length > 0 && (
+                                <div className="space-y-4 mt-4">
+                                  <h5 className="text-sm font-medium text-gray-700">Template Fields:</h5>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {item.template.field_definitions.map((field, index) => (
+                                      <div key={index} className="bg-blue-50 p-3 rounded-md">
+                                        <label className="block text-xs font-medium text-blue-600 mb-1">
+                                          {field.name} {field.required && <span className="text-red-500">*</span>}
+                                        </label>
+                                        {field.type === 'text' && (
+                                          <input
+                                            type="text"
+                                            value={item.custom_fields && item.custom_fields[field.name] ? item.custom_fields[field.name] : ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...selectedItems];
+                                              const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                              if (itemIndex !== -1) {
+                                                updatedItems[itemIndex] = {
+                                                  ...updatedItems[itemIndex],
+                                                  custom_fields: {
+                                                    ...updatedItems[itemIndex].custom_fields,
+                                                    [field.name]: e.target.value
+                                                  }
+                                                };
+                                                setSelectedItems(updatedItems);
+                                              }
+                                            }}
+                                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder={field.placeholder || `Enter ${field.name.toLowerCase()}`}
+                                            required={field.required}
+                                          />
+                                        )}
+                                        {field.type === 'number' && (
+                                          <input
+                                            type="number"
+                                            value={item.custom_fields && item.custom_fields[field.name] ? item.custom_fields[field.name] : ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...selectedItems];
+                                              const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                              if (itemIndex !== -1) {
+                                                updatedItems[itemIndex] = {
+                                                  ...updatedItems[itemIndex],
+                                                  custom_fields: {
+                                                    ...updatedItems[itemIndex].custom_fields,
+                                                    [field.name]: e.target.value
+                                                  }
+                                                };
+                                                setSelectedItems(updatedItems);
+                                              }
+                                            }}
+                                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder={field.placeholder || `Enter ${field.name.toLowerCase()}`}
+                                            required={field.required}
+                                          />
+                                        )}
+                                        {field.type === 'dropdown' && (
+                                          <select
+                                            value={item.custom_fields && item.custom_fields[field.name] ? item.custom_fields[field.name] : ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...selectedItems];
+                                              const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                              if (itemIndex !== -1) {
+                                                updatedItems[itemIndex] = {
+                                                  ...updatedItems[itemIndex],
+                                                  custom_fields: {
+                                                    ...updatedItems[itemIndex].custom_fields,
+                                                    [field.name]: e.target.value
+                                                  }
+                                                };
+                                                setSelectedItems(updatedItems);
+                                              }
+                                            }}
+                                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            required={field.required}
+                                          >
+                                            <option value="">Select {field.name}</option>
+                                            {field.options && field.options.map((option, optIndex) => (
+                                              <option key={optIndex} value={option}>
+                                                {option}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        )}
+                                        {field.type === 'boolean' && (
+                                          <div className="flex items-center">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.custom_fields && item.custom_fields[field.name] === 'true' || item.custom_fields && item.custom_fields[field.name] === true}
+                                              onChange={(e) => {
+                                                const updatedItems = [...selectedItems];
+                                                const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                                if (itemIndex !== -1) {
+                                                  updatedItems[itemIndex] = {
+                                                    ...updatedItems[itemIndex],
+                                                    custom_fields: {
+                                                      ...updatedItems[itemIndex].custom_fields,
+                                                      [field.name]: e.target.checked.toString()
+                                                    }
+                                                  };
+                                                  setSelectedItems(updatedItems);
+                                                }
+                                              }}
+                                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-blue-300 rounded"
+                                            />
+                                            <label className="ml-2 text-sm text-blue-700">
+                                              {field.name}
+                                            </label>
+                                          </div>
+                                        )}
+                                        {field.type === 'textarea' && (
+                                          <textarea
+                                            value={item.custom_fields && item.custom_fields[field.name] ? item.custom_fields[field.name] : ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...selectedItems];
+                                              const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                              if (itemIndex !== -1) {
+                                                updatedItems[itemIndex] = {
+                                                  ...updatedItems[itemIndex],
+                                                  custom_fields: {
+                                                    ...updatedItems[itemIndex].custom_fields,
+                                                    [field.name]: e.target.value
+                                                  }
+                                                };
+                                                setSelectedItems(updatedItems);
+                                              }
+                                            }}
+                                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder={field.placeholder || `Enter ${field.name.toLowerCase()}`}
+                                            rows={3}
+                                            required={field.required}
+                                          />
+                                        )}
+                                        {field.type === 'url' && (
+                                          <input
+                                            type="url"
+                                            value={item.custom_fields && item.custom_fields[field.name] ? item.custom_fields[field.name] : ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...selectedItems];
+                                              const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                              if (itemIndex !== -1) {
+                                                updatedItems[itemIndex] = {
+                                                  ...updatedItems[itemIndex],
+                                                  custom_fields: {
+                                                    ...updatedItems[itemIndex].custom_fields,
+                                                    [field.name]: e.target.value
+                                                  }
+                                                };
+                                                setSelectedItems(updatedItems);
+                                              }
+                                            }}
+                                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder={field.placeholder || "https://example.com"}
+                                            required={field.required}
+                                          />
+                                        )}
+                                        {field.type === 'phone' && (
+                                          <input
+                                            type="tel"
+                                            value={item.custom_fields && item.custom_fields[field.name] ? item.custom_fields[field.name] : ''}
+                                            onChange={(e) => {
+                                              const updatedItems = [...selectedItems];
+                                              const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                              if (itemIndex !== -1) {
+                                                updatedItems[itemIndex] = {
+                                                  ...updatedItems[itemIndex],
+                                                  custom_fields: {
+                                                    ...updatedItems[itemIndex].custom_fields,
+                                                    [field.name]: e.target.value
+                                                  }
+                                                };
+                                                setSelectedItems(updatedItems);
+                                              }
+                                            }}
+                                            className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder={field.placeholder || "+1 (555) 123-4567"}
+                                            required={field.required}
+                                          />
+                                        )}
+                                        {field.type === 'file' && (
+                                          <div className="space-y-1">
+                                            <input
+                                              type="file"
+                                              onChange={(e) => {
+                                                const updatedItems = [...selectedItems];
+                                                const itemIndex = updatedItems.findIndex(selected => selected.id === item.id);
+                                                if (itemIndex !== -1) {
+                                                  updatedItems[itemIndex] = {
+                                                    ...updatedItems[itemIndex],
+                                                    custom_fields: {
+                                                      ...updatedItems[itemIndex].custom_fields,
+                                                      [field.name]: e.target.files[0]
+                                                    }
+                                                  };
+                                                  setSelectedItems(updatedItems);
+                                                }
+                                              }}
+                                              className="w-full px-2 py-1 text-sm border border-blue-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                              required={field.required}
+                                              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.csv"
+                                            />
+                                            {item.custom_fields && item.custom_fields[field.name] && (
+                                              <p className="text-xs text-blue-600">
+                                                Selected: {item.custom_fields[field.name].name || 'File selected'}
+                                              </p>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
                               {/* Show item's specifications if they exist */}
                               {item.specifications && Object.keys(item.specifications).length > 0 && (
                                 <div className="space-y-4 mt-4">
@@ -828,6 +1046,7 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                             errors.currency ? 'border-red-500' : 'border-gray-300'
                           }`}
                           disabled={currenciesLoading}
+                          defaultValue="USD"
                         >
                           <option value="">Select Currency</option>
                           {Object.entries(currencies).map(([code, name]) => (

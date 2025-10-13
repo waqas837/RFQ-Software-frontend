@@ -1,6 +1,8 @@
-import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, DocumentTextIcon, CheckIcon, XMarkIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, DocumentTextIcon, CheckIcon, XMarkIcon, TruckIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 import Pagination from '../components/Pagination'
+import Toast from '../components/Toast'
+import POEditModal from '../components/POEditModal'
 import { purchaseOrdersAPI, currencyAPI } from '../services/api'
 
 const PurchaseOrders = ({ userRole }) => {
@@ -24,12 +26,48 @@ const PurchaseOrders = ({ userRole }) => {
   const [purchaseOrders, setPurchaseOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [currencySymbols, setCurrencySymbols] = useState({})
+  const [exporting, setExporting] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingPO, setEditingPO] = useState(null)
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [itemsPerPage] = useState(10)
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type })
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000)
+  }
+
+  const handleEditPO = (po) => {
+    setEditingPO(po)
+    setShowEditModal(true)
+  }
+
+  const handleEditSuccess = (updatedPO) => {
+    // Update the PO in the list
+    setPurchaseOrders(prev => 
+      prev.map(po => po.id === updatedPO.id ? updatedPO : po)
+    )
+    setShowEditModal(false)
+    setEditingPO(null)
+  }
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false)
+    setEditingPO(null)
+  }
+
+  const canEditPO = (po) => {
+    return po.status === 'draft' || 
+           po.status === 'pending_approval' || 
+           po.status === 'sent_to_supplier' || 
+           po.status === 'acknowledged' || 
+           po.status === 'in_progress'
+  }
 
   // Fetch purchase orders on component mount
   useEffect(() => {
@@ -45,6 +83,31 @@ const PurchaseOrders = ({ userRole }) => {
       }
     } catch (error) {
       console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const handleExportPOs = async () => {
+    try {
+      setExporting(true)
+      
+      const exportParams = {
+        format: 'csv',
+        status: selectedStatus !== 'all' ? selectedStatus : undefined,
+        date_from: undefined, // Can be added later for date filtering
+        date_to: undefined   // Can be added later for date filtering
+      }
+      
+      const result = await purchaseOrdersAPI.export(exportParams)
+      
+      if (result.success) {
+        // Show success message
+        showToast(`Purchase orders exported successfully as ${result.filename}`, 'success')
+      }
+    } catch (error) {
+      console.error('Error exporting purchase orders:', error)
+      showToast('Failed to export purchase orders. Please try again.', 'error')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -117,13 +180,13 @@ const PurchaseOrders = ({ userRole }) => {
         const response = await purchaseOrdersAPI.update(poId, { status: 'pending_approval' })
         if (response.success) {
           fetchPurchaseOrders()
-          alert('Purchase Order submitted for approval!')
+          showToast('Purchase Order submitted for approval!', 'success')
         } else {
-          alert('Failed to submit PO: ' + response.message)
+          showToast('Failed to submit PO: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error submitting PO:', error)
-        alert('Error submitting PO. Please try again.')
+        showToast('Error submitting PO. Please try again.', 'error')
       }
     }
   }
@@ -134,13 +197,13 @@ const PurchaseOrders = ({ userRole }) => {
         const response = await purchaseOrdersAPI.approve(poId)
         if (response.success) {
           fetchPurchaseOrders()
-          alert('Purchase Order approved successfully!')
+          showToast('Purchase Order approved successfully!', 'success')
         } else {
-          alert('Failed to approve PO: ' + response.message)
+          showToast('Failed to approve PO: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error approving PO:', error)
-        alert('Error approving PO. Please try again.')
+        showToast('Error approving PO. Please try again.', 'error')
       }
     }
   }
@@ -151,13 +214,13 @@ const PurchaseOrders = ({ userRole }) => {
         const response = await purchaseOrdersAPI.send(poId)
         if (response.success) {
           fetchPurchaseOrders()
-          alert('Purchase Order sent to supplier successfully!')
+          showToast('Purchase Order sent to supplier successfully!', 'success')
         } else {
-          alert('Failed to send PO to supplier: ' + response.message)
+          showToast('Failed to send PO to supplier: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error sending PO to supplier:', error)
-        alert('Error sending PO to supplier. Please try again.')
+        showToast('Error sending PO to supplier. Please try again.', 'error')
       }
     }
   }
@@ -168,13 +231,13 @@ const PurchaseOrders = ({ userRole }) => {
         const response = await purchaseOrdersAPI.confirm(poId)
         if (response.success) {
           fetchPurchaseOrders()
-          alert('Purchase Order acknowledged successfully!')
+          showToast('Purchase Order acknowledged successfully!', 'success')
         } else {
-          alert('Failed to acknowledge PO: ' + response.message)
+          showToast('Failed to acknowledge PO: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error acknowledging PO:', error)
-        alert('Error acknowledging PO. Please try again.')
+        showToast('Error acknowledging PO. Please try again.', 'error')
       }
     }
   }
@@ -185,13 +248,13 @@ const PurchaseOrders = ({ userRole }) => {
         const response = await purchaseOrdersAPI.update(poId, { status: 'in_progress' })
         if (response.success) {
           fetchPurchaseOrders()
-          alert('Purchase Order marked as In Progress!')
+          showToast('Purchase Order marked as In Progress!', 'success')
         } else {
-          alert('Failed to update PO status: ' + response.message)
+          showToast('Failed to update PO status: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error updating PO status:', error)
-        alert('Error updating PO status. Please try again.')
+        showToast('Error updating PO status. Please try again.', 'error')
       }
     }
   }
@@ -202,13 +265,13 @@ const PurchaseOrders = ({ userRole }) => {
         const response = await purchaseOrdersAPI.update(poId, { status: 'delivered' })
         if (response.success) {
           fetchPurchaseOrders()
-          alert('Purchase Order marked as Delivered!')
+          showToast('Purchase Order marked as Delivered!', 'success')
         } else {
-          alert('Failed to update PO status: ' + response.message)
+          showToast('Failed to update PO status: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error updating PO status:', error)
-        alert('Error updating PO status. Please try again.')
+        showToast('Error updating PO status. Please try again.', 'error')
       }
     }
   }
@@ -219,13 +282,13 @@ const PurchaseOrders = ({ userRole }) => {
         const response = await purchaseOrdersAPI.delete(poId)
         if (response.success) {
           fetchPurchaseOrders()
-          alert('Purchase Order deleted successfully!')
+          showToast('Purchase Order deleted successfully!', 'success')
         } else {
-          alert('Failed to delete PO: ' + response.message)
+          showToast('Failed to delete PO: ' + response.message, 'error')
         }
       } catch (error) {
         console.error('Error deleting PO:', error)
-        alert('Error deleting PO. Please try again.')
+        showToast('Error deleting PO. Please try again.', 'error')
       }
     }
   }
@@ -267,9 +330,13 @@ const PurchaseOrders = ({ userRole }) => {
             <p className="text-gray-600">Manage purchase orders and track deliveries</p>
           </div>
           <div className="flex space-x-3">
-            <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+            <button 
+              onClick={handleExportPOs}
+              disabled={exporting}
+              className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <DocumentTextIcon className="h-5 w-5 mr-2" />
-              Export POs
+              {exporting ? 'Exporting...' : 'Export POs'}
             </button>
           </div>
         </div>
@@ -284,7 +351,7 @@ const PurchaseOrders = ({ userRole }) => {
                 <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search POs by ID, RFQ title, or supplier..."
+                  placeholder="Search purchase orders by PO number, RFQ title, or supplier name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -378,8 +445,16 @@ const PurchaseOrders = ({ userRole }) => {
                         View
                       </button>
                       <button 
-                        onClick={() => alert('Edit functionality coming soon!')}
-                        className="text-gray-600 hover:text-gray-900 hover:underline"
+                        onClick={() => handleEditPO(po)}
+                        className={`${canEditPO(po) 
+                          ? 'text-gray-600 hover:text-gray-900 hover:underline cursor-pointer' 
+                          : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                        disabled={!canEditPO(po)}
+                        title={!canEditPO(po) 
+                          ? 'Cannot edit PO in current status' 
+                          : 'Edit Purchase Order'
+                        }
                       >
                         Edit
                       </button>
@@ -437,8 +512,8 @@ const PurchaseOrders = ({ userRole }) => {
         />
       </div>
 
-      {/* Empty state */}
-      {filteredPOs.length === 0 && (
+      {/* Empty state - only show when not loading and no data */}
+      {!loading && filteredPOs.length === 0 && (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <div className="mx-auto h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center mb-4">
             <DocumentTextIcon className="h-6 w-6 text-gray-400" />
@@ -450,6 +525,25 @@ const PurchaseOrders = ({ userRole }) => {
             Create Your First PO
           </button>
         </div>
+      )}
+
+      {/* Toast Component */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'success' })}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <POEditModal
+          isOpen={showEditModal}
+          onClose={handleCloseEditModal}
+          poData={editingPO}
+          onSuccess={handleEditSuccess}
+        />
       )}
     </div>
   )

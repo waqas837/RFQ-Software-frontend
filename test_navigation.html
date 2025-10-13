@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Navigation</title>
+</head>
+<body>
+    <h1>Test Navigation</h1>
+    <button onclick="testNavigation()">Test Navigation to Negotiation</button>
+    
+    <script>
+        function testNavigation() {
+            // Simulate navigation to negotiation page
+            const negotiationId = 1;
+            const url = `/negotiations/${negotiationId}`;
+            console.log('Navigating to:', url);
+            // In a real app, this would be: navigate(url);
+            alert('Would navigate to: ' + url);
+        }
+    </script>
+</body>
+</html>

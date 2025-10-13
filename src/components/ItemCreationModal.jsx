@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, PlusIcon, TrashIcon, CloudArrowUpIcon, PhotoIcon, DocumentIcon } from '@heroicons/react/24/outline'
 import { itemsAPI, categoriesAPI, itemTemplatesAPI } from '../services/api'
+import FileUpload from './FileUpload'
+import Toast from './Toast'
 
 const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading = false }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +22,14 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
   const [availableTemplates, setAvailableTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [files, setFiles] = useState([])
+  const [uploadingFiles, setUploadingFiles] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type })
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000)
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -35,6 +45,7 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
         custom_fields: {}
       })
       setSelectedTemplate(null)
+      setFiles([])
       fetchCategories()
       fetchTemplates()
     }
@@ -150,11 +161,38 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.name || !formData.description || !formData.category_id) {
-      alert('Please fill in all required fields')
+      showToast('Please fill in all required fields', 'error')
       return
     }
 
-    await onSubmit(formData)
+    try {
+      // First create the item
+      const result = await onSubmit(formData)
+      
+      // If item creation was successful and we have files, upload them
+      if (result && result.success && files.length > 0) {
+        setUploadingFiles(true)
+        const itemId = result.data.id
+        
+        // Upload files one by one
+        for (const file of files) {
+          try {
+            const fileType = file.type.startsWith('image/') ? 'image' : 'document'
+            const isPrimary = files.indexOf(file) === 0 && file.type.startsWith('image/')
+            
+            await itemsAPI.uploadAttachment(itemId, file.file, fileType, isPrimary)
+          } catch (error) {
+            console.error('Error uploading file:', file.name, error)
+            // Continue with other files even if one fails
+          }
+        }
+        
+        setUploadingFiles(false)
+      }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error)
+      setUploadingFiles(false)
+    }
   }
 
   if (!isOpen) return null
@@ -389,6 +427,42 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
                         required={field.required}
                       />
                     )}
+                    {field.type === 'url' && (
+                      <input
+                        type="url"
+                        value={formData.custom_fields[field.name] || ''}
+                        onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                        placeholder={field.placeholder || "https://example.com"}
+                        required={field.required}
+                      />
+                    )}
+                    {field.type === 'phone' && (
+                      <input
+                        type="tel"
+                        value={formData.custom_fields[field.name] || ''}
+                        onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                        placeholder={field.placeholder || "+1 (555) 123-4567"}
+                        required={field.required}
+                      />
+                    )}
+                    {field.type === 'file' && (
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          onChange={(e) => handleCustomFieldChange(field.name, e.target.files[0])}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                          required={field.required}
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.csv"
+                        />
+                        {formData.custom_fields[field.name] && (
+                          <p className="text-sm text-gray-600">
+                            Selected: {formData.custom_fields[field.name].name || 'File selected'}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -442,6 +516,56 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
             </div>
           </div>
 
+          {/* File Attachments */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Attachments (Optional)
+            </label>
+            <div className="space-y-4">
+              <FileUpload
+                files={files}
+                onFilesChange={setFiles}
+                maxFiles={10}
+                maxSize={10 * 1024 * 1024} // 10MB
+              />
+              
+              {files.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">Selected Files:</h4>
+                  <div className="space-y-2">
+                    {files.map((file, index) => (
+                      <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          {file.type.startsWith('image/') ? (
+                            <PhotoIcon className="h-5 w-5 text-blue-500" />
+                          ) : (
+                            <DocumentIcon className="h-5 w-5 text-gray-500" />
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : 'Unknown size'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFiles = files.filter((_, i) => i !== index)
+                            setFiles(newFiles)
+                          }}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Form Actions */}
           <div className="flex justify-end space-x-3 pt-4 border-t">
             <button
@@ -453,13 +577,18 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploadingFiles}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Creating...
+                </>
+              ) : uploadingFiles ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Uploading Files...
                 </>
               ) : (
                 'Create Item'
@@ -468,6 +597,15 @@ const ItemCreationModal = ({ isOpen, onClose, onSubmit, categories = [], loading
           </div>
         </form>
       </div>
+
+      {/* Toast Component */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'success' })}
+        />
+      )}
     </div>
   )
 }

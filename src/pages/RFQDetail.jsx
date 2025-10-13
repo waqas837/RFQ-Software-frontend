@@ -10,7 +10,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
-import { rfqsAPI, bidsAPI, currencyAPI, API_BASE_URL } from '../services/api'
+import { rfqsAPI, bidsAPI, currencyAPI, negotiationsAPI, API_BASE_URL } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const RFQDetail = ({ userRole }) => {
@@ -34,6 +34,7 @@ const RFQDetail = ({ userRole }) => {
       showToast(location.state.message, 'success')
     }
   }, [id, location.state])
+
 
   const fetchCurrencySymbols = async () => {
     try {
@@ -444,6 +445,7 @@ const RFQDetail = ({ userRole }) => {
           )}
         </div>
       </div>
+
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />

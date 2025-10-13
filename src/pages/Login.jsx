@@ -1,19 +1,28 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { EyeIcon, EyeSlashIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { authAPI } from '../services/api'
 
 const Login = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
+  const [verificationMessage, setVerificationMessage] = useState('')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     remember: false
   })
+
+  useEffect(() => {
+    // Check for verification success message
+    if (searchParams.get('verified') === 'true') {
+      setVerificationMessage('Your email has been successfully verified! You can now log in.')
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -33,8 +42,24 @@ const Login = () => {
       // Trigger auth change event
       window.dispatchEvent(new Event('authChange'))
       
-      // Redirect to dashboard
-      navigate('/dashboard')
+      // Determine role and redirect accordingly
+      let role = null
+      const user = response.data.user
+      if (user?.roles && user.roles.length > 0) {
+        role = user.roles[0]?.name
+      } else if (user?.role) {
+        role = user.role
+      }
+
+      if (role === 'developer') {
+        navigate('/developer/dashboard')
+      } else if (role === 'admin') {
+        navigate('/dashboard')
+      } else if (role === 'supplier') {
+        navigate('/dashboard')
+      } else {
+        navigate('/dashboard')
+      }
     } catch (error) {
       setError(error.message || 'Login failed. Please check your credentials.')
       setFieldErrors({})
@@ -112,6 +137,13 @@ const Login = () => {
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
               {error}
+            </div>
+          )}
+
+          {verificationMessage && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center">
+              <CheckCircleIcon className="h-5 w-5 mr-2" />
+              {verificationMessage}
             </div>
           )}
           

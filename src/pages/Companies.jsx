@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, EyeIcon, PencilIcon, TrashIcon, BuildingOfficeIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Modal from '../components/Modal'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Toast from '../components/Toast'
 import { companiesAPI } from '../services/api'
 
 const Companies = () => {
@@ -15,6 +16,12 @@ const Companies = () => {
   const [viewingCompany, setViewingCompany] = useState(null)
   const [loading, setLoading] = useState(false)
   const [companies, setCompanies] = useState([])
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type })
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000)
+  }
 
   const statuses = [
     { id: 'all', name: 'All Status' },
@@ -144,7 +151,7 @@ const Companies = () => {
     } catch (error) {
       console.error('Error saving company:', error)
       const errorMessage = error.message || 'Error saving company. Please try again.'
-      alert(errorMessage)
+      showToast(errorMessage, 'error')
     } finally {
       setLoading(false)
     }
@@ -192,7 +199,7 @@ const Companies = () => {
     } catch (error) {
       console.error('Error deleting company:', error)
       const errorMessage = error.message || 'Error deleting company. Please try again.'
-      alert(errorMessage)
+      showToast(errorMessage, 'error')
     } finally {
       setLoading(false)
     }
@@ -821,6 +828,15 @@ const Companies = () => {
           </div>
         )}
       </Modal>
+
+      {/* Toast Component */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'success' })}
+        />
+      )}
     </div>
   )
 }

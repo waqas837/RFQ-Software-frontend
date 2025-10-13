@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
-import { usersAPI } from '../services/api'
+import { authAPI, usersAPI } from '../services/api'
 
 const EmailVerification = () => {
   const [searchParams] = useSearchParams()
@@ -12,9 +12,6 @@ const EmailVerification = () => {
 
   useEffect(() => {
     const token = searchParams.get('token')
-    console.log('EmailVerification - Token from URL:', token)
-    console.log('EmailVerification - Current URL:', window.location.href)
-    console.log('EmailVerification - Current localStorage user:', JSON.parse(localStorage.getItem('user') || '{}'))
     
     if (!token) {
       setStatus('error')
@@ -29,8 +26,31 @@ const EmailVerification = () => {
   const verifyEmail = async (token) => {
     try {
       console.log('EmailVerification - Calling API with token:', token)
-      const response = await usersAPI.verifyEmailUpdate(token)
-      console.log('EmailVerification - API Response:', response)
+      
+      // Try signup verification first
+      let response = await authAPI.verifyEmail(token)
+      console.log('EmailVerification - Signup verification response:', response)
+      
+      if (response.success) {
+        setStatus('success')
+        setMessage('Your email has been successfully verified! You can now log in to your account.')
+        
+        // Clear any existing user data and redirect to login
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          navigate('/login?verified=true')
+        }, 2000)
+        
+        return
+      }
+      
+      // If signup verification fails, try email update verification
+      console.log('EmailVerification - Trying email update verification')
+      response = await usersAPI.verifyEmailUpdate(token)
+      console.log('EmailVerification - Email update verification response:', response)
       
       if (response.success) {
         setStatus('success')
@@ -79,13 +99,14 @@ const EmailVerification = () => {
     navigate('/dashboard')
   }
 
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-900">Verifying your email...</h2>
-          <p className="text-gray-600 mt-2">Please wait while we verify your new email address.</p>
+          <p className="text-gray-600 mt-2">Please wait while we verify your email address.</p>
         </div>
       </div>
     )
@@ -116,7 +137,10 @@ const EmailVerification = () => {
           {status === 'success' && (
             <div className="bg-green-50 border border-green-200 rounded-md p-4">
               <p className="text-sm text-green-800">
-                Your email address has been successfully updated. You can now use your new email address to log in.
+                {message.includes('updated') 
+                  ? 'Your email address has been successfully updated. You can now use your new email address to log in.'
+                  : 'Your email has been successfully verified! You can now log in to your account.'
+                }
               </p>
             </div>
           )}
@@ -124,7 +148,7 @@ const EmailVerification = () => {
           {status === 'error' && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
               <p className="text-sm text-red-800">
-                The verification link may have expired or is invalid. Please request a new verification email from your profile settings.
+                The verification link may have expired or is invalid. Please request a new verification email.
               </p>
             </div>
           )}
@@ -132,27 +156,38 @@ const EmailVerification = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             {status === 'success' && (
               <>
-                <button
-                  onClick={handleGoToProfile}
-                  className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  View Profile
-                </button>
-                <button
-                  onClick={handleGoToDashboard}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Go to Dashboard
-                </button>
+                {message.includes('updated') ? (
+                  <>
+                    <button
+                      onClick={handleGoToProfile}
+                      className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                    >
+                      View Profile
+                    </button>
+                    <button
+                      onClick={handleGoToDashboard}
+                      className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                    >
+                      Go to Dashboard
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                  >
+                    Go to Login
+                  </button>
+                )}
               </>
             )}
 
             {status === 'error' && (
               <button
-                onClick={handleGoToProfile}
+                onClick={() => navigate('/login')}
                 className="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
               >
-                Go to Profile Settings
+                Go to Login
               </button>
             )}
           </div>

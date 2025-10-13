@@ -27,8 +27,7 @@ const Reports = ({ userRole }) => {
       case 'buyer':
         return [
           { id: 'overview', name: 'My Dashboard', icon: ChartBarIcon },
-          { id: 'rfq', name: 'My RFQs', icon: DocumentTextIcon },
-          { id: 'cost', name: 'My Savings', icon: CurrencyDollarIcon }
+          { id: 'rfq', name: 'My RFQs', icon: DocumentTextIcon }
         ]
       case 'supplier':
         return [
@@ -66,12 +65,6 @@ const Reports = ({ userRole }) => {
     supplierWinRates: [],
     supplierResponseTimes: [],
     supplierQualityRatings: []
-  })
-  const [costSavingsData, setCostSavingsData] = useState({
-    totalSavings: 0,
-    averageSavingsPerRfq: 0,
-    savingsByCategory: [],
-    monthlySavingsTrend: []
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -153,9 +146,6 @@ const Reports = ({ userRole }) => {
         case 'supplier':
           response = await reportsAPI.getSupplierPerformance({ period: selectedPeriod })
           break
-        case 'cost':
-          response = await reportsAPI.getCostSavings({ period: selectedPeriod })
-          break
         default:
           response = await reportsAPI.getDashboard({ period: selectedPeriod })
       }
@@ -225,15 +215,6 @@ const Reports = ({ userRole }) => {
               supplierWinRates: supplierData.supplier_win_rates || [],
               supplierResponseTimes: supplierData.supplier_response_times || [],
               supplierQualityRatings: supplierData.supplier_quality_ratings || []
-            })
-            break
-          case 'cost':
-            const costData = transformDataByRole(response.data || {})
-            setCostSavingsData({
-              totalSavings: costData.total_savings || costData.my_total_savings || 0,
-              averageSavingsPerRfq: costData.average_savings_per_rfq || costData.my_average_savings || 0,
-              savingsByCategory: transformCategoryData(costData.savings_by_category || costData.my_savings_by_category || []),
-              monthlySavingsTrend: transformMonthlyTrends(costData.monthly_savings_trend || [])
             })
             break
         }
@@ -417,7 +398,7 @@ const Reports = ({ userRole }) => {
             categoryData={overviewData.categoryDistribution || []}
             budgetData={overviewData.budgetData || []}
             supplierPerformanceData={overviewData.topSuppliers || []}
-            costSavingsData={overviewData.totalSavings ? [{ name: 'Total Savings', value: overviewData.totalSavings }] : []}
+            costSavingsData={[]}
           />
         )}
       </div>
@@ -530,49 +511,6 @@ const Reports = ({ userRole }) => {
     </div>
   )
 
-  const renderCostSavings = () => (
-    <div className="space-y-6">
-      {/* Savings Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Total Savings</h3>
-          <div className="text-3xl font-bold text-gray-600 mb-2">{costSavingsData.totalSavings}</div>
-          <p className="text-sm text-gray-500">Average per RFQ: {costSavingsData.averageSavingsPerRFQ}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Savings by Category</h3>
-          <div className="space-y-3">
-            {(costSavingsData.savingsByCategory || []).map((category, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{category.category}</span>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">{category.savings}</div>
-                  <div className="text-xs text-gray-500">{category.percentage}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Monthly Trends */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Savings Trend</h3>
-        <div className="flex items-end space-x-4 h-32">
-          {(costSavingsData.monthlySavingsTrend || []).map((month, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center">
-              <div 
-                className="w-full bg-gray-500 rounded-t"
-                style={{ height: `${(month.savings / 15000) * 100}%` }}
-              ></div>
-              <div className="text-xs text-gray-500 mt-2">{month.month}</div>
-              <div className="text-xs font-medium text-gray-900">${month.savings.toLocaleString()}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
 
   const renderReportContent = () => {
     // Role-based content rendering
@@ -586,8 +524,6 @@ const Reports = ({ userRole }) => {
               return renderRFQAnalysis()
             case 'supplier':
               return renderSupplierPerformance()
-            case 'cost':
-              return renderCostSavings()
             default:
               return renderOverviewReport()
           }
@@ -597,8 +533,6 @@ const Reports = ({ userRole }) => {
               return renderOverviewReport()
             case 'rfq':
               return renderRFQAnalysis()
-            case 'cost':
-              return renderCostSavings()
             default:
               return renderOverviewReport()
           }

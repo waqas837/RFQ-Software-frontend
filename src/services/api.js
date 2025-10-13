@@ -1,6 +1,6 @@
 // API Configuration
-// export const API_BASE_URL = 'https://api.furnitrack.com/api'
-export const API_BASE_URL = 'http://localhost:8000/api'
+export const API_BASE_URL = 'https://api.furnitrack.com/api'
+// export const API_BASE_URL = 'http://localhost:8000/api'
 
 // Helper functions
 const getAuthToken = () => {
@@ -344,6 +344,39 @@ export const itemsAPI = {
       method: 'POST',
     })
   },
+
+  // File attachments
+  uploadAttachment: async (itemId, file, fileType = null, isPrimary = false) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (fileType) formData.append('file_type', fileType)
+    if (isPrimary) formData.append('is_primary', 'true')
+    
+    return apiRequest(`/items/${itemId}/attachments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`,
+        'Accept': 'application/json',
+      },
+      body: formData,
+    })
+  },
+
+  getAttachments: async (itemId) => {
+    return apiRequest(`/items/${itemId}/attachments`)
+  },
+
+  deleteAttachment: async (itemId, attachmentId) => {
+    return apiRequest(`/items/${itemId}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  setPrimaryAttachment: async (itemId, attachmentId) => {
+    return apiRequest(`/items/${itemId}/attachments/${attachmentId}/primary`, {
+      method: 'PUT',
+    })
+  },
 }
 
 // Item Templates API
@@ -650,6 +683,13 @@ export const purchaseOrdersAPI = {
     })
   },
 
+  createFromNegotiation: async (negotiationId, poData) => {
+    return apiRequest(`/purchase-orders/create-from-negotiation/${negotiationId}`, {
+      method: 'POST',
+      body: JSON.stringify(poData),
+    })
+  },
+
   update: async (id, poData) => {
     return apiRequest(`/purchase-orders/${id}`, {
       method: 'PUT',
@@ -683,6 +723,38 @@ export const purchaseOrdersAPI = {
       }
     })
   },
+
+  export: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    const response = await fetch(`${API_BASE_URL}/purchase-orders/export?${queryString}`, {
+      headers: {
+        'Authorization': `Bearer ${getAuthToken()}`,
+        'Accept': 'application/json',
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('Export failed')
+    }
+    
+    // Get filename from Content-Disposition header
+    const contentDisposition = response.headers.get('Content-Disposition')
+    const filename = contentDisposition 
+      ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') 
+      : `purchase_orders_${new Date().toISOString().split('T')[0]}.csv`
+    
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    
+    return { success: true, filename }
+  },
 }
 
 // Reports API
@@ -702,10 +774,6 @@ export const reportsAPI = {
     return apiRequest(`/reports/supplier-performance?${queryString}`)
   },
 
-  getCostSavings: async (params = {}) => {
-    const queryString = new URLSearchParams(params).toString()
-    return apiRequest(`/reports/cost-savings?${queryString}`)
-  },
 
   export: async (data) => {
     return apiRequest('/reports/export', {
@@ -862,6 +930,37 @@ export const currencyAPI = {
   })
 }
 
+// Negotiation API
+export const negotiationsAPI = {
+  getAll: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString()
+    return apiRequest(`/negotiations?${queryString}`)
+  },
+  getById: (id) => apiRequest(`/negotiations/${id}`),
+  create: (negotiationData) => apiRequest('/negotiations', {
+    method: 'POST',
+    body: JSON.stringify(negotiationData)
+  }),
+  sendMessage: (id, messageData) => apiRequest(`/negotiations/${id}/messages`, {
+    method: 'POST',
+    body: JSON.stringify(messageData)
+  }),
+  uploadAttachment: (id, formData) => {
+    const token = getAuthToken()
+    return fetch(`${API_BASE_URL}/negotiations/${id}/attachments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData
+    }).then(response => response.json())
+  },
+  close: (id) => apiRequest(`/negotiations/${id}/close`, { method: 'POST' }),
+  cancel: (id) => apiRequest(`/negotiations/${id}/cancel`, { method: 'POST' }),
+  delete: (id) => apiRequest(`/negotiations/${id}`, { method: 'DELETE' }),
+  getStats: () => apiRequest('/negotiations/stats/overview')
+}
+
 // Export all APIs
 export default {
   auth: authAPI,
@@ -876,4 +975,5 @@ export default {
   emailTemplates: emailTemplatesAPI,
   notifications: notificationsAPI,
   currency: currencyAPI,
+  negotiations: negotiationsAPI,
 }

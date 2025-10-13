@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { usersAPI } from '../services/api'
 
-const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
+const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user, showToast }) => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -137,13 +137,19 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
       console.log('EditProfileModal - Email update response:', response)
       
       if (response.success) {
-        setErrors({ emailSuccess: response.message })
+        // Show success toast
+        showToast('Verification email sent! Please check your email to complete the email change.', 'success')
+        // Clear the form
+        setEmailFormData({ new_email: '' })
+        setErrors({})
         // Update localStorage with new email and trigger UI refresh
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         user.email = emailFormData.new_email;
         localStorage.setItem('user', JSON.stringify(user));
         window.dispatchEvent(new Event('authChange'));
       } else {
+        // Show error toast
+        showToast(response.message || 'Failed to send verification email', 'error')
         if (response.errors) {
           setErrors(response.errors)
         } else {
@@ -152,6 +158,7 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
       }
     } catch (error) {
       console.error('Error requesting email update:', error)
+      showToast('Network error. Please try again.', 'error')
       setErrors({ emailError: 'Network error. Please try again.' })
     } finally {
       setLoading(false)
@@ -233,7 +240,7 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${
                   errors.name ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Enter full name"
@@ -250,7 +257,7 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 placeholder="Enter phone number"
               />
             </div>
@@ -264,7 +271,7 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
                 name="position"
                 value={formData.position}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 placeholder="Enter job position"
               />
             </div>
@@ -278,7 +285,7 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
                 name="department"
                 value={formData.department}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                 placeholder="Enter department"
               />
             </div>
@@ -294,10 +301,20 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50"
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 flex items-center justify-center"
               disabled={loading}
             >
-              {loading ? 'Updating...' : 'Update Profile'}
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Updating...
+                </>
+              ) : (
+                'Update Profile'
+              )}
             </button>
           </div>
         </form>
@@ -336,7 +353,7 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
                 name="new_email"
                 value={emailFormData.new_email}
                 onChange={handleEmailInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${
                   errors.new_email ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Enter new email address"
@@ -348,6 +365,7 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
               <p className="text-sm text-yellow-800">
                 <strong>Security Notice:</strong> A verification email will be sent to your new email address. 
                 You must click the verification link to complete the email change.
+                If you don't receive the email, you can resend it by clicking the button again.
               </p>
             </div>
 
@@ -361,10 +379,20 @@ const EditProfileModal = ({ isOpen, onClose, onProfileUpdated, user }) => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 flex items-center justify-center"
                 disabled={loading}
               >
-                {loading ? 'Sending...' : 'Send Verification Email'}
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Sending...
+                  </>
+                ) : (
+                  'Send Verification Email'
+                )}
               </button>
             </div>
           </form>

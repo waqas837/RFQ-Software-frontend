@@ -38,6 +38,7 @@ const SupplierDashboard = () => {
   const [recentAwards, setRecentAwards] = useState([])
   const [recentPOs, setRecentPOs] = useState([])
   const [currencySymbols, setCurrencySymbols] = useState({})
+  const [loading, setLoading] = useState(true)
 
   const formatCurrency = (amount, currency = 'USD') => {
     const symbol = currencySymbols[currency]?.symbol || currency
@@ -93,6 +94,8 @@ const SupplierDashboard = () => {
         })
       } catch (error) {
         console.error('Error loading supplier data:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -150,7 +153,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Available RFQs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.availableRFQs}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.availableRFQs}</p>
+              )}
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <DocumentTextIcon className="w-6 h-6 text-blue-700" />
@@ -166,7 +175,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">My Bids</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.myBids}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.myBids}</p>
+              )}
             </div>
             <div className="p-3 bg-gray-100 rounded-lg">
               <ChartBarIcon className="w-6 h-6 text-gray-700" />
@@ -182,7 +197,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Awarded Bids</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.awardedBids}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.awardedBids}</p>
+              )}
             </div>
             <div className="p-3 bg-gray-100 rounded-lg">
               <CheckCircleIcon className="w-6 h-6 text-gray-700" />
@@ -198,7 +219,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Pending Bids</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pendingBids}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.pendingBids}</p>
+              )}
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
               <ClockIcon className="w-6 h-6 text-yellow-700" />
@@ -214,7 +241,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">${(stats.totalRevenue / 1000).toFixed(0)}K</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">${(stats.totalRevenue / 1000).toFixed(0)}K</p>
+              )}
             </div>
             <div className="p-3 bg-indigo-100 rounded-lg">
               <CurrencyDollarIcon className="w-6 h-6 text-indigo-700" />
@@ -230,7 +263,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Win Rate</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.winRate}%</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.winRate}%</p>
+              )}
             </div>
             <div className="p-3 bg-gray-100 rounded-lg">
               <CheckCircleIcon className="w-6 h-6 text-gray-700" />
@@ -246,7 +285,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">New Orders</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pendingPOs}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.pendingPOs}</p>
+              )}
             </div>
             <div className="p-3 bg-orange-100 rounded-lg">
               <ShoppingCartIcon className="w-6 h-6 text-orange-700" />
@@ -261,7 +306,13 @@ const SupplierDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">In Progress</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.inProgressPOs}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.inProgressPOs}</p>
+              )}
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <TruckIcon className="w-6 h-6 text-blue-700" />

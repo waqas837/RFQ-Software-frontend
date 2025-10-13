@@ -20,6 +20,8 @@ const PublicNavbar = () => {
             <a href="#features" className="text-gray-700 hover:text-gray-900 transition-colors">Features</a>
             <a href="#pricing" className="text-gray-700 hover:text-gray-900 transition-colors">Pricing</a>
             <a href="#testimonials" className="text-gray-700 hover:text-gray-900 transition-colors">Customers</a>
+            <Link to="/api-docs" className="text-gray-700 hover:text-gray-900 transition-colors">API Docs</Link>
+            <Link to="/developer/register" className="text-gray-700 hover:text-gray-900 transition-colors">Developer Portal</Link>
             <Link to="/login" className="text-gray-700 hover:text-gray-900 transition-colors">Sign In</Link>
             <Link to="/register" className="bg-gradient-to-r from-gray-700 to-gray-900 text-white px-6 py-2.5 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
               Get Started Free
@@ -68,6 +70,20 @@ const PublicNavbar = () => {
               >
                 Customers
               </a>
+              <Link
+                to="/api-docs"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                API Docs
+              </Link>
+              <Link
+                to="/developer/register"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Developer Portal
+              </Link>
               <Link
                 to="/login"
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"

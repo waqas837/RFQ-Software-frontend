@@ -6,10 +6,18 @@ import {
   DocumentTextIcon,
   CurrencyDollarIcon,
   CalendarIcon,
-  UserIcon
+  UserIcon,
+  ChatBubbleLeftRightIcon,
+  TrophyIcon,
+  DocumentArrowDownIcon,
+  EyeIcon,
+  ClipboardDocumentCheckIcon,
+  HandRaisedIcon,
+  DocumentPlusIcon
 } from '@heroicons/react/24/outline'
 import { bidsAPI, purchaseOrdersAPI } from '../services/api'
 import { useToast, ToastContainer } from './Toast'
+import NegotiationModal from './NegotiationModal'
 
 const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
   const [bids, setBids] = useState([])
@@ -18,6 +26,8 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
   const [evaluationNotes, setEvaluationNotes] = useState({})
   const [scores, setScores] = useState({})
   const [submitting, setSubmitting] = useState({})
+  const [showNegotiationModal, setShowNegotiationModal] = useState(false)
+  const [selectedBidForNegotiation, setSelectedBidForNegotiation] = useState(null)
   const { showToast, removeToast, toasts } = useToast()
 
   // Format currency using RFQ's currency
@@ -415,25 +425,35 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
                     </button>
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-3">
 {(bid.status === 'submitted' || bid.status === 'under_review' || !bid.status) && bid.status !== 'awarded' && (
                       <>
                         {(!bid.technical_score && !bid.commercial_score && !bid.delivery_score) && (
                           <button
                             onClick={() => handleSubmitEvaluation(bid.id)}
                             disabled={submitting[bid.id]}
-                            className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center px-4 py-2 bg-slate-500/20 backdrop-blur-sm border border-slate-300/30 text-slate-700 hover:bg-slate-500/30 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md cursor-pointer"
                           >
-                            <StarIcon className="w-4 h-4 mr-2" />
+                            <ClipboardDocumentCheckIcon className="w-4 h-4 mr-2" />
                             {submitting[bid.id] ? 'Submitting...' : 'Submit Evaluation'}
                           </button>
                         )}
                         <button
+                          onClick={() => {
+                            setSelectedBidForNegotiation(bid)
+                            setShowNegotiationModal(true)
+                          }}
+                          className="flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+                        >
+                          <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                          Negotiate
+                        </button>
+                        <button
                           onClick={() => handleAwardBid(bid.id)}
                           disabled={submitting[bid.id]}
-                          className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md cursor-pointer"
                         >
-                          <CheckCircleIcon className="w-4 h-4 mr-2" />
+                          <TrophyIcon className="w-4 h-4 mr-2" />
                           Award Bid
                         </button>
                       </>
@@ -452,20 +472,20 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
                             </span>
                             <button
                               onClick={() => window.open(`/purchase-orders/${bid.purchase_order.id}`, '_blank')}
-                              className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                              className="flex items-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer text-sm"
                             >
-                              <DocumentTextIcon className="w-4 h-4 mr-1" />
+                              <EyeIcon className="w-4 h-4 mr-1" />
                               View PO
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-3">
                             <button
                               onClick={() => handleGeneratePO(bid.id)}
                               disabled={submitting[bid.id]}
-                              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md cursor-pointer"
                             >
-                              <DocumentTextIcon className="w-4 h-4 mr-2" />
+                              <DocumentPlusIcon className="w-4 h-4 mr-2" />
                               {submitting[bid.id] ? 'Generating...' : 'Generate PO'}
                             </button>
                             <span className="text-xs text-gray-500">
@@ -519,6 +539,23 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
       </div>
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      
+      {/* Negotiation Modal */}
+      {showNegotiationModal && selectedBidForNegotiation && (
+        <NegotiationModal
+          isOpen={showNegotiationModal}
+          onClose={() => {
+            setShowNegotiationModal(false)
+            setSelectedBidForNegotiation(null)
+          }}
+          bid={selectedBidForNegotiation}
+          rfq={rfq}
+          userRole="buyer"
+          onNegotiationStart={(negotiation) => {
+            showToast('Negotiation started successfully', 'success')
+          }}
+        />
+      )}
     </div>
   )
 }

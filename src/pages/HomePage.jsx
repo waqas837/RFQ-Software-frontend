@@ -23,7 +23,7 @@ const HomePage = () => {
     {
       icon: DocumentTextIcon,
       title: 'Smart RFQ Creation',
-      description: 'AI-powered templates and intelligent form filling for professional RFQs in minutes.',
+      description: 'Smart templates and intelligent form filling for professional RFQs in minutes.',
       color: 'text-gray-600',
       bgColor: 'bg-gray-50',
       gradient: 'from-gray-500 to-gray-600'
@@ -109,22 +109,24 @@ const HomePage = () => {
               {/* Main Heading */}
               <div>
                 <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                  <span className="text-gray-800">RFQ software</span>
+                  <span className="text-gray-800">SimplyProcure</span>
                   <br />
-                  <span className="text-gray-600">built for your needs</span>
+                  <span className="text-gray-600 text-3xl lg:text-4xl font-medium">
+                    Smart Procurement, Simplified
+                  </span>
                 </h1>
               </div>
 
               {/* Description */}
               <p className="text-xl text-gray-600 leading-relaxed">
-                AI-based procurement platform that automates procurement processes, saves time and gives you complete control over your spend.
+                Smart procurement platform that streamlines procurement processes, saves time and gives you complete control over your spend.
               </p>
 
               {/* Feature Tags */}
               <div className="flex flex-wrap gap-3">
                 <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
                   <CheckIcon className="w-4 h-4 mr-1 text-gray-600" />
-                  AI-Powered
+                  Smart
                 </span>
                 <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
                   <CheckIcon className="w-4 h-4 mr-1 text-gray-600" />
@@ -171,7 +173,7 @@ const HomePage = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart RFQ Creation</h3>
-                    <p className="text-gray-600 mb-4">AI-powered templates</p>
+                    <p className="text-gray-600 mb-4">Smart templates</p>
                     <ul className="space-y-2">
                       <li className="flex items-center text-gray-700">
                         <div className="w-2 h-2 bg-gray-600 rounded-full mr-3"></div>
@@ -419,7 +421,7 @@ const HomePage = () => {
                 <div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Create RFQ</h3>
-              <p className="text-gray-600">Use our AI-powered templates to create professional RFQs in minutes</p>
+              <p className="text-gray-600">Use our smart templates to create professional RFQs in minutes</p>
             </div>
             
             <div className="text-center group">

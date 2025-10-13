@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { 
-  MagnifyingGlassIcon, 
   UserCircleIcon,
   Bars3Icon
 } from '@heroicons/react/24/outline'
@@ -8,7 +7,6 @@ import { authAPI } from '../../services/api'
 import NotificationBell from '../NotificationBell'
 
 const Header = ({ userRole }) => {
-  const [searchQuery, setSearchQuery] = useState('')
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [user, setUser] = useState(() => {
     return localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null
@@ -43,6 +41,7 @@ const Header = ({ userRole }) => {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [showUserMenu])
 
+
   return (
               <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="flex items-center justify-between px-4 py-3 lg:px-6">
@@ -54,22 +53,6 @@ const Header = ({ userRole }) => {
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
-        </div>
-
-        {/* Center - Search */}
-        <div className="flex-1 max-w-lg mx-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search RFQs, suppliers, bids..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
-            />
-          </div>
         </div>
 
         {/* Right side - Notifications and User */}
@@ -112,10 +95,12 @@ const Header = ({ userRole }) => {
                      } catch (error) {
                        console.error('Logout error:', error)
                      } finally {
-                       localStorage.removeItem('authToken')
-                       localStorage.removeItem('user')
+                       // Clear ALL storage to avoid role bleed
+                       try { localStorage.clear() } catch (e) {}
+                       try { sessionStorage.clear() } catch (e) {}
                        setShowUserMenu(false)
                        window.dispatchEvent(new Event('authChange'))
+                       // Hard redirect to login
                        window.location.href = '/login'
                      }
                    }}

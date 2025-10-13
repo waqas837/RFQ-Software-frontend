@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import Toast from '../components/Toast'
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -9,12 +10,18 @@ const Contact = () => {
     subject: '',
     message: ''
   })
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type })
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000)
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     // Handle form submission here
     console.log('Form submitted:', formData)
-    alert('Thank you for your message! We\'ll get back to you soon.')
+    showToast('Thank you for your message! We\'ll get back to you soon.', 'success')
   }
 
   const handleChange = (e) => {
@@ -236,6 +243,15 @@ const Contact = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast Component */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'success' })}
+        />
+      )}
     </div>
   )
 }

@@ -18,8 +18,11 @@ import {
 } from '@heroicons/react/24/outline'
 import { notificationsAPI } from '../services/api'
 import Pagination from '../components/Pagination'
+import { useToast, ToastContainer } from '../components/Toast'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 const Notifications = () => {
+  const { showToast, removeToast, toasts } = useToast()
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -28,6 +31,7 @@ const Notifications = () => {
   const [filterStatus, setFilterStatus] = useState('all')
   const [selectedNotifications, setSelectedNotifications] = useState([])
   const [actionLoading, setActionLoading] = useState(null)
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null, data: null })
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -130,31 +134,58 @@ const Notifications = () => {
             read_at: new Date().toISOString() 
           }))
         )
+        // Show success message
+        showToast('All notifications marked as read', 'success')
+      } else {
+        showToast(response.message || 'Failed to mark all notifications as read', 'error')
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error)
+      showToast('Network error. Please try again.', 'error')
     } finally {
       setActionLoading(null)
     }
   }
 
-  const handleDelete = async (notificationId) => {
-    if (!window.confirm('Are you sure you want to delete this notification?')) {
-      return
-    }
+  const handleDelete = (notificationId) => {
+    setConfirmModal({
+      isOpen: true,
+      action: 'delete-single',
+      data: notificationId
+    })
+  }
 
+  const handleConfirmDelete = async () => {
+    const { action, data } = confirmModal
+    
     try {
-      setActionLoading(notificationId)
-      const response = await notificationsAPI.delete(notificationId)
+      setActionLoading('bulk')
       
-      if (response.success) {
-        setNotifications(prev => prev.filter(notif => notif.id !== notificationId))
-        setTotalCount(prev => prev - 1)
+      if (action === 'delete-single') {
+        const response = await notificationsAPI.delete(data)
+        
+        if (response.success) {
+          setNotifications(prev => prev.filter(notif => notif.id !== data))
+          setTotalCount(prev => prev - 1)
+          showToast('Notification deleted successfully', 'success')
+        } else {
+          showToast(response.message || 'Failed to delete notification', 'error')
+        }
+      } else if (action === 'delete-bulk') {
+        await Promise.all(
+          data.map(id => notificationsAPI.delete(id))
+        )
+        setNotifications(prev => prev.filter(notif => !data.includes(notif.id)))
+        setTotalCount(prev => prev - data.length)
+        setSelectedNotifications([])
+        showToast(`${data.length} notifications deleted successfully`, 'success')
       }
     } catch (error) {
       console.error('Error deleting notification:', error)
+      showToast('Network error. Please try again.', 'error')
     } finally {
       setActionLoading(null)
+      setConfirmModal({ isOpen: false, action: null, data: null })
     }
   }
 
@@ -203,14 +234,12 @@ const Notifications = () => {
           )
         )
       } else if (action === 'delete') {
-        if (!window.confirm(`Are you sure you want to delete ${selectedNotifications.length} notifications?`)) {
-          return
-        }
-        await Promise.all(
-          selectedNotifications.map(id => notificationsAPI.delete(id))
-        )
-        setNotifications(prev => prev.filter(notif => !selectedNotifications.includes(notif.id)))
-        setTotalCount(prev => prev - selectedNotifications.length)
+        setConfirmModal({
+          isOpen: true,
+          action: 'delete-bulk',
+          data: selectedNotifications
+        })
+        return
       }
       
       setSelectedNotifications([])
@@ -242,15 +271,15 @@ const Notifications = () => {
 
   const getNotificationColor = (type) => {
     const colorMap = {
-      'rfq_created': 'text-blue-600',
-      'rfq_published': 'text-blue-600',
+      'rfq_created': 'text-gray-600',
+      'rfq_published': 'text-gray-600',
       'rfq_closed': 'text-gray-600',
       'bid_submitted': 'text-gray-600',
       'bid_awarded': 'text-gray-600',
       'bid_rejected': 'text-red-600',
       'po_created': 'text-gray-600',
       'po_approved': 'text-gray-600',
-      'po_sent': 'text-blue-600',
+      'po_sent': 'text-gray-600',
       'po_delivered': 'text-gray-600',
       'user_registered': 'text-indigo-600',
       'supplier_approved': 'text-gray-600',
@@ -292,7 +321,7 @@ const Notifications = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading notifications...</p>
         </div>
       </div>
@@ -301,16 +330,16 @@ const Notifications = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <BellIcon className="h-8 w-8 mr-3 text-blue-600" />
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+                <BellIcon className="h-6 w-6 sm:h-8 sm:w-8 mr-3 text-gray-600" />
                 Notifications
               </h1>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-gray-600 text-sm sm:text-base">
                 Manage your notifications and stay updated with system activities
               </p>
             </div>
@@ -318,14 +347,15 @@ const Notifications = () => {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={actionLoading === 'mark-all' || notifications.filter(n => !n.is_read).length === 0}
-                className="bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="bg-white/80 backdrop-blur-sm text-gray-700 px-3 sm:px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm sm:text-base"
               >
                 {actionLoading === 'mark-all' ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
                 ) : (
                   <CheckIcon className="h-4 w-4 mr-2" />
                 )}
-                Mark All Read
+                <span className="hidden sm:inline">Mark All Read</span>
+                <span className="sm:hidden">Mark All</span>
               </button>
             </div>
           </div>
@@ -333,7 +363,7 @@ const Notifications = () => {
 
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -342,7 +372,7 @@ const Notifications = () => {
                 placeholder="Search notifications..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
               />
             </div>
 
@@ -350,7 +380,7 @@ const Notifications = () => {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             >
               <option value="all">All Types</option>
               <option value="rfq_created">RFQ Created</option>
@@ -371,7 +401,7 @@ const Notifications = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="unread">Unread</option>
@@ -380,31 +410,49 @@ const Notifications = () => {
 
             {/* Bulk Actions */}
             {selectedNotifications.length > 0 && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">
-                  {selectedNotifications.length} selected
-                </span>
-                <button
-                  onClick={() => handleBulkAction('mark-read')}
-                  disabled={actionLoading === 'bulk'}
-                  className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700 disabled:opacity-50"
-                >
-                  Mark Read
-                </button>
-                <button
-                  onClick={() => handleBulkAction('mark-unread')}
-                  disabled={actionLoading === 'bulk'}
-                  className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 disabled:opacity-50"
-                >
-                  Mark Unread
-                </button>
-                <button
-                  onClick={() => handleBulkAction('delete')}
-                  disabled={actionLoading === 'bulk'}
-                  className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:opacity-50"
-                >
-                  Delete
-                </button>
+              <div className="col-span-full">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      {selectedNotifications.length} notification{selectedNotifications.length !== 1 ? 's' : ''} selected
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleBulkAction('mark-read')}
+                        disabled={actionLoading === 'bulk'}
+                        className="bg-gray-500 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {actionLoading === 'bulk' ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        ) : (
+                          'Mark Read'
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleBulkAction('mark-unread')}
+                        disabled={actionLoading === 'bulk'}
+                        className="border-2 border-gray-400 text-gray-700 bg-transparent px-3 py-1.5 rounded text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {actionLoading === 'bulk' ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-700"></div>
+                        ) : (
+                          'Mark Unread'
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleBulkAction('delete')}
+                        disabled={actionLoading === 'bulk'}
+                        className="bg-gray-600 text-white px-3 py-1.5 rounded text-sm hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {actionLoading === 'bulk' ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        ) : (
+                          'Delete'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -439,7 +487,7 @@ const Notifications = () => {
                     type="checkbox"
                     checked={selectedNotifications.length === notifications.length && notifications.length > 0}
                     onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                   />
                   <span className="ml-2 text-sm text-gray-600">Select All</span>
                 </label>
@@ -455,7 +503,7 @@ const Notifications = () => {
                     <div
                       key={notification.id}
                       className={`p-6 hover:bg-gray-50 transition-colors ${
-                        !notification.is_read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                        !notification.is_read ? 'bg-gray-50 border-l-4 border-l-gray-500' : ''
                       }`}
                     >
                       <div className="flex items-start space-x-4">
@@ -464,7 +512,7 @@ const Notifications = () => {
                           type="checkbox"
                           checked={selectedNotifications.includes(notification.id)}
                           onChange={() => handleSelectNotification(notification.id)}
-                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="mt-1 rounded border-gray-300 text-gray-600 focus:ring-gray-500"
                         />
 
                         {/* Icon */}
@@ -560,6 +608,26 @@ const Notifications = () => {
           </div>
         )}
       </div>
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, action: null, data: null })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Notification"
+        message={
+          confirmModal.action === 'delete-bulk' 
+            ? `Are you sure you want to delete ${confirmModal.data?.length || 0} notifications? This action cannot be undone.`
+            : 'Are you sure you want to delete this notification? This action cannot be undone.'
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        loading={actionLoading === 'bulk'}
+      />
     </div>
   )
 }

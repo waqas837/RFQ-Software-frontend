@@ -8,17 +8,22 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 import Pagination from '../components/Pagination'
 import { bidsAPI, currencyAPI } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 const Bids = ({ userRole }) => {
   const navigate = useNavigate()
   const [bids, setBids] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, bidId: null })
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -33,6 +38,16 @@ const Bids = ({ userRole }) => {
     fetchBids()
     fetchCurrencySymbols()
   }, [])
+
+  // Fetch bids when filters change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(1) // Reset to first page when filters change
+      fetchBids(1)
+    }, 500) // Debounce search
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, statusFilter])
 
   const fetchCurrencySymbols = async () => {
     try {
@@ -56,6 +71,8 @@ const Bids = ({ userRole }) => {
       const params = {
         page: page,
         per_page: itemsPerPage,
+        search: searchTerm || undefined,
+        status: statusFilter || undefined,
       }
       
       const response = await bidsAPI.getAll(params)
@@ -82,11 +99,13 @@ const Bids = ({ userRole }) => {
     fetchBids(page)
   }
 
-  const handleDelete = async (bidId) => {
-    if (!window.confirm('Are you sure you want to delete this bid?')) {
-      return
-    }
+  const handleDelete = (bidId) => {
+    setConfirmModal({ isOpen: true, bidId })
+  }
 
+  const handleConfirmDelete = async () => {
+    const { bidId } = confirmModal
+    
     try {
       setDeleting(bidId)
       const response = await bidsAPI.delete(bidId)
@@ -102,13 +121,14 @@ const Bids = ({ userRole }) => {
       showToast('Error deleting bid', 'error')
     } finally {
       setDeleting(null)
+      setConfirmModal({ isOpen: false, bidId: null })
     }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'draft': return 'bg-yellow-100 text-yellow-800'
-      case 'submitted': return 'bg-blue-100 text-blue-800'
+      case 'submitted': return 'bg-gray-100 text-gray-800'
       case 'under_review': return 'bg-orange-100 text-orange-800'
       case 'accepted': return 'bg-green-100 text-green-800'
       case 'rejected': return 'bg-red-100 text-red-800'
@@ -164,6 +184,41 @@ const Bids = ({ userRole }) => {
         </p>
       </div>
 
+      {/* Search and Filters */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search bids by RFQ title, bid number, or amount..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && fetchBids()}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                />
+              </div>
+            </div>
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+            >
+              <option value="">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+              <option value="under_review">Under Review</option>
+              <option value="accepted">Accepted</option>
+              <option value="rejected">Rejected</option>
+              <option value="awarded">Awarded</option>
+              <option value="withdrawn">Withdrawn</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       {/* Bids Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -201,7 +256,7 @@ const Bids = ({ userRole }) => {
                     <p className="text-gray-600 mb-4">You haven't submitted any bids yet.</p>
                     <button
                       onClick={() => navigate('/rfqs')}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
                     >
                       Browse RFQs
                     </button>
@@ -273,13 +328,13 @@ const Bids = ({ userRole }) => {
                       <div className="flex justify-center items-center space-x-4">
                         <button
                           onClick={() => navigate(`/bids/${bid.id}`)}
-                          className="text-blue-600 hover:text-blue-900 hover:underline"
+                          className="text-gray-600 hover:text-gray-900 hover:underline"
                         >
                           View
                         </button>
                         {userRole === 'admin' && bid.status === 'submitted' && (
                           <button
-                            onClick={() => navigate(`/bids/${bid.id}/evaluate`)}
+                            onClick={() => navigate(`/bids/${bid.id}`)}
                             className="text-green-600 hover:text-green-900 hover:underline"
                           >
                             Evaluate
@@ -328,6 +383,19 @@ const Bids = ({ userRole }) => {
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, bidId: null })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Bid"
+        message="Are you sure you want to delete this bid? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        loading={deleting === confirmModal.bidId}
+      />
     </div>
   )
 }

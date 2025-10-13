@@ -31,6 +31,7 @@ const AdminDashboard = () => {
   const [recentUsers, setRecentUsers] = useState([])
   const [recentCompanies, setRecentCompanies] = useState([])
   const [pendingSuppliers, setPendingSuppliers] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadAdminData = async () => {
@@ -64,6 +65,8 @@ const AdminDashboard = () => {
         })
       } catch (error) {
         console.error('Error loading admin data:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -94,7 +97,13 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+              )}
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <UsersIcon className="w-6 h-6 text-blue-700" />
@@ -110,7 +119,13 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Companies</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalCompanies}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.totalCompanies}</p>
+              )}
             </div>
             <div className="p-3 bg-gray-100 rounded-lg">
               <BuildingOfficeIcon className="w-6 h-6 text-gray-700" />
@@ -142,7 +157,13 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total RFQs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalRFQs}</p>
+              {loading ? (
+                <div className="animate-pulse py-2">
+                  <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats.totalRFQs}</p>
+              )}
             </div>
             <div className="p-3 bg-orange-100 rounded-lg">
               <DocumentTextIcon className="w-6 h-6 text-orange-700" />

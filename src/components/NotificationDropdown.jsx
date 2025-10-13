@@ -121,6 +121,25 @@ const NotificationDropdown = ({ onClose, onNotificationRead }) => {
             onClose()
           }
           break
+        case 'negotiation_message':
+          console.log('Negotiation message notification data:', data)
+          console.log('Full notification object:', notification)
+          if (data.negotiation_id) {
+            // Navigate to negotiation chat page
+            console.log('Navigating to negotiation:', data.negotiation_id)
+            navigate(`/negotiations/${data.negotiation_id}`)
+            onClose()
+          } else if (data.rfq_id) {
+            // Fallback: navigate to RFQ detail page
+            console.log('No negotiation_id found, navigating to RFQ:', data.rfq_id)
+            navigate(`/rfqs/${data.rfq_id}`)
+            onClose()
+          } else {
+            console.log('No negotiation_id or rfq_id found, navigating to RFQs')
+            navigate('/rfqs')
+            onClose()
+          }
+          break
         default:
           // For other notification types, just close the dropdown
           onClose()

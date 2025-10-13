@@ -17,7 +17,12 @@ import {
   EnvelopeIcon,
   CubeIcon,
   TagIcon,
-  BellIcon
+  BellIcon,
+  ChatBubbleLeftRightIcon,
+  KeyIcon,
+  CodeBracketIcon,
+  ChartBarSquareIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import Logo from '../Logo'
 
@@ -61,6 +66,7 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
       case 'admin':
         return [
           { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+          { name: 'Negotiations', href: '/negotiations', icon: ChatBubbleLeftRightIcon },
           { name: 'Notifications', href: '/notifications', icon: BellIcon },
           { name: 'User Management', href: '/admin/users', icon: UsersIcon },
           { name: 'Company Management', href: '/companies', icon: BuildingOfficeIcon },
@@ -76,20 +82,31 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
           { name: 'Reports', href: '/reports', icon: ChartBarIcon },
           { name: 'System Settings', href: '/settings', icon: ShieldCheckIcon },
         ]
+      case 'developer':
+        return [
+          { name: 'Dashboard', href: '/developer/dashboard', icon: HomeIcon },
+          { name: 'API Keys', href: '/developer/api-keys', icon: KeyIcon },
+          { name: 'API Documentation', href: '/developer/docs', icon: CodeBracketIcon },
+          { name: 'Usage Statistics', href: '/developer/usage', icon: ChartBarSquareIcon },
+          { name: 'Rate Limits', href: '/developer/limits', icon: ClockIcon },
+          { name: 'My Profile', href: '/profile', icon: UserGroupIcon },
+          { name: 'Settings', href: '/developer/settings', icon: Cog6ToothIcon },
+        ]
       case 'supplier':
         return [
           { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+          { name: 'Negotiations', href: '/negotiations', icon: ChatBubbleLeftRightIcon },
           { name: 'Notifications', href: '/notifications', icon: BellIcon },
           { name: 'Available RFQs', href: '/rfqs', icon: DocumentTextIcon },
           { name: 'My Bids', href: '/bids', icon: ClipboardDocumentListIcon },
           { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCartIcon },
           { name: 'My Profile', href: '/profile', icon: UserGroupIcon },
-          { name: 'Other Users', href: '/users', icon: UserGroupIcon },
           { name: 'Reports', href: '/reports', icon: ChartBarIcon },
         ]
       default: // buyer
         return [
           { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+          { name: 'Negotiations', href: '/negotiations', icon: ChatBubbleLeftRightIcon },
           { name: 'Notifications', href: '/notifications', icon: BellIcon },
           { name: 'My RFQs', href: '/rfqs', icon: DocumentTextIcon },
           { name: 'Item Catalog', href: '/items', icon: CubeIcon },
@@ -123,7 +140,13 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
   }
 
   const isActive = (href) => {
-    return location.pathname === href
+    // Handle exact matches for dashboard
+    if (href === '/dashboard') {
+      return location.pathname === '/dashboard'
+    }
+    
+    // For other routes, check if the current path starts with the href
+    return location.pathname.startsWith(href)
   }
 
   return (
@@ -191,12 +214,22 @@ const Sidebar = ({ userRole, sidebarOpen, setSidebarOpen }) => {
         </div>
       </div>
 
-      {/* Light gray overlay for mobile - subtle tint over content */}
+      {/* Blurred overlay for mobile */}
       {isOpen && (
-        <div
-          className="fixed inset-y-0 left-64 right-0 z-40 bg-gray-200 bg-opacity-30 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 backdrop-blur-[2px] bg-transparent lg:hidden">
+          {/* Close button */}
+          <button
+            onClick={() => setIsOpen(false)}
+            className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+          >
+            <XMarkIcon className="w-6 h-6 text-gray-600" />
+          </button>
+          {/* Clickable overlay */}
+          <div
+            className="w-full h-full"
+            onClick={() => setIsOpen(false)}
+          />
+        </div>
       )}
     </>
   )

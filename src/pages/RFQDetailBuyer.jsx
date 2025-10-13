@@ -8,7 +8,8 @@ import {
   PencilIcon,
   TrashIcon,
   EyeIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline'
 import { rfqsAPI, currencyAPI, API_BASE_URL } from '../services/api'
 import BidEvaluation from '../components/BidEvaluation'
@@ -187,9 +188,9 @@ const RFQDetailBuyer = () => {
             {rfq.bids?.length > 0 && (
               <button
                 onClick={() => setActiveTab('bids')}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 shadow-sm hover:shadow-md transition-all duration-200"
               >
-                <CheckCircleIcon className="w-4 h-4 mr-2" />
+                <ClipboardDocumentCheckIcon className="w-4 h-4 mr-2" />
                 Evaluate Bids ({rfq.bids.length})
               </button>
             )}

@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { PlusIcon, MagnifyingGlassIcon, Cog6ToothIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import RFQWizard from '../components/RFQWizard'
 import WorkflowManager from '../components/WorkflowManager'
+import NegotiationModal from '../components/NegotiationModal'
 import Pagination from '../components/Pagination'
 import ConfirmationModal from '../components/ConfirmationModal'
-import { rfqsAPI, bidsAPI, currencyAPI, API_BASE_URL } from '../services/api'
+import { rfqsAPI, bidsAPI, currencyAPI, negotiationsAPI, API_BASE_URL } from '../services/api'
 import { useToast, ToastContainer } from '../components/Toast'
 
 const RFQs = ({ userRole }) => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [isWizardOpen, setIsWizardOpen] = useState(false)
   const [isWorkflowOpen, setIsWorkflowOpen] = useState(false)
   const [selectedRfq, setSelectedRfq] = useState(null)
@@ -32,7 +34,19 @@ const RFQs = ({ userRole }) => {
   const [itemsPerPage] = useState(10)
   const [currencySymbols, setCurrencySymbols] = useState({})
   const [showImportModal, setShowImportModal] = useState(false)
+  const [showNegotiationModal, setShowNegotiationModal] = useState(false)
+  const [selectedNegotiationId, setSelectedNegotiationId] = useState(null)
+  const [selectedBidForNegotiation, setSelectedBidForNegotiation] = useState(null)
   const { showToast, removeToast, toasts } = useToast()
+
+  // Initialize search term from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search)
+    const searchParam = urlParams.get('search')
+    if (searchParam) {
+      setSearchTerm(searchParam)
+    }
+  }, [location.search])
 
   // Fetch RFQs and user bids on component mount
   useEffect(() => {
@@ -42,6 +56,31 @@ const RFQs = ({ userRole }) => {
       fetchUserBids()
     }
   }, [userRole])
+
+  // Handle URL parameters for negotiation modal
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search)
+    const negotiationId = urlParams.get('negotiation')
+    
+    if (negotiationId) {
+      setSelectedNegotiationId(negotiationId)
+      fetchNegotiationData(negotiationId)
+    }
+  }, [location.search])
+
+  const fetchNegotiationData = async (negotiationId) => {
+    try {
+      const response = await negotiationsAPI.getById(negotiationId)
+      if (response.success) {
+        const negotiation = response.data
+        setSelectedBidForNegotiation(negotiation.bid)
+        setShowNegotiationModal(true)
+      }
+    } catch (error) {
+      console.error('Error fetching negotiation data:', error)
+      showToast('Failed to load negotiation', 'error')
+    }
+  }
 
   const fetchCurrencySymbols = async () => {
     try {
@@ -388,7 +427,7 @@ const RFQs = ({ userRole }) => {
                 <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search RFQs..."
+                  placeholder="Search RFQs by title, description, or reference..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && fetchRFQs()}
@@ -614,6 +653,23 @@ const RFQs = ({ userRole }) => {
         type="danger"
         loading={actionLoading}
       />
+
+      {/* Negotiation Modal */}
+      {showNegotiationModal && selectedBidForNegotiation && (
+        <NegotiationModal
+          isOpen={showNegotiationModal}
+          onClose={() => {
+            setShowNegotiationModal(false)
+            setSelectedNegotiationId(null)
+            setSelectedBidForNegotiation(null)
+            // Clear URL parameters
+            navigate('/rfqs', { replace: true })
+          }}
+          bid={selectedBidForNegotiation}
+          rfq={selectedBidForNegotiation?.rfq}
+          userRole={userRole}
+        />
+      )}
 
       {/* Import Modal */}
       {showImportModal && (

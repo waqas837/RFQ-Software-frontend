@@ -31,6 +31,11 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import EmailVerification from './pages/EmailVerification'
+import DeveloperRegister from './pages/DeveloperRegister'
+import DeveloperVerifyEmail from './pages/DeveloperVerifyEmail'
+import DeveloperDashboard from './pages/DeveloperDashboard'
+import DeveloperApiKeys from './pages/DeveloperApiKeys'
+import DeveloperApiDocs from './pages/DeveloperApiDocs'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import About from './pages/About'
@@ -38,6 +43,9 @@ import Contact from './pages/Contact'
 import EmailTemplates from './pages/EmailTemplates'
 import BidSubmissionForm from './components/BidSubmissionForm'
 import BidDetail from './pages/BidDetail'
+import NegotiationChat from './pages/NegotiationChat'
+import Negotiations from './pages/Negotiations'
+import APIDocumentation from './pages/APIDocumentation'
 import Notifications from './pages/Notifications'
 import RoleBasedRoute from './components/RoleBasedRoute'
 
@@ -113,6 +121,10 @@ function App() {
           <Route path="/invitation" element={<PublicLayout><InvitationHandler /></PublicLayout>} />
           <Route path="/forgot-password" element={<PublicLayout><ForgotPassword /></PublicLayout>} />
           <Route path="/reset-password" element={<PublicLayout><ResetPassword /></PublicLayout>} />
+          <Route path="/verify-email" element={<PublicLayout><EmailVerification /></PublicLayout>} />
+          <Route path="/developer/register" element={<PublicLayout><DeveloperRegister /></PublicLayout>} />
+          <Route path="/developer/verify-email" element={<PublicLayout><DeveloperVerifyEmail /></PublicLayout>} />
+          <Route path="/api-docs" element={<PublicLayout><APIDocumentation /></PublicLayout>} />
           <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
           <Route path="/privacy" element={<PublicLayout><Privacy /></PublicLayout>} />
           <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
@@ -149,8 +161,6 @@ function App() {
               <Route path="/users" element={<UsersList />} />
               <Route path="/users/:id/profile" element={<UserProfile />} />
               
-              {/* Email verification route (accessible to authenticated users) */}
-              <Route path="/verify-email" element={<EmailVerification />} />
               
               {/* Admin-only routes */}
               <Route path="/admin/users" element={
@@ -233,10 +243,46 @@ function App() {
               <Route path="/comparison" element={<Comparison userRole={userRole} />} />
               <Route path="/notifications" element={<Notifications />} />
               
+              {/* Negotiations */}
+              <Route path="/negotiations" element={
+                <RoleBasedRoute userRole={userRole} allowedRoles={['admin', 'buyer', 'supplier']}>
+                  <Negotiations userRole={userRole} />
+                </RoleBasedRoute>
+              } />
+              
+              {/* Negotiation Chat */}
+          <Route path="/negotiations/:negotiationId" element={
+            <RoleBasedRoute userRole={userRole} allowedRoles={['admin', 'buyer', 'supplier']}>
+              <NegotiationChat userRole={userRole} />
+            </RoleBasedRoute>
+          } />
+          
+          {/* Developer Dashboard */}
+          <Route path="/developer/dashboard" element={
+            <RoleBasedRoute userRole={userRole} allowedRoles={['developer']}>
+              <DeveloperDashboard />
+            </RoleBasedRoute>
+          } />
+          
+          {/* Developer API Keys */}
+          <Route path="/developer/api-keys" element={
+            <RoleBasedRoute userRole={userRole} allowedRoles={['developer']}>
+              <DeveloperApiKeys />
+            </RoleBasedRoute>
+          } />
+          
+          {/* Developer API Documentation */}
+          <Route path="/developer/docs" element={
+            <RoleBasedRoute userRole={userRole} allowedRoles={['developer']}>
+              <DeveloperApiDocs />
+            </RoleBasedRoute>
+          } />
+              
               {/* Catch all - redirect to appropriate dashboard */}
               <Route path="*" element={
                 userRole === 'admin' ? <AdminDashboard /> :
                 userRole === 'supplier' ? <SupplierDashboard /> :
+                userRole === 'developer' ? <DeveloperDashboard /> :
                 <BuyerDashboard />
               } />
             </Routes>

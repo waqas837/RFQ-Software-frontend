@@ -5,7 +5,7 @@ import { CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, XMarkI
 export const useToast = () => {
   const [toasts, setToasts] = useState([])
 
-  const showToast = (message, type = 'success', duration = 3000) => {
+  const showToast = (message, type = 'success', duration = 4000) => {
     const id = Date.now() + Math.random()
     const newToast = { id, message, type, duration }
     
@@ -46,7 +46,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
       case 'warning':
         return <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />
       case 'info':
-        return <InformationCircleIcon className="h-6 w-6 text-blue-500" />
+        return <InformationCircleIcon className="h-6 w-6 text-gray-500" />
       default:
         return <CheckCircleIcon className="h-6 w-6 text-gray-500" />
     }
@@ -61,7 +61,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
       case 'warning':
         return 'bg-yellow-50 border-yellow-200'
       case 'info':
-        return 'bg-blue-50 border-blue-200'
+        return 'bg-gray-50 border-gray-200'
       default:
         return 'bg-gray-50 border-gray-200'
     }
@@ -76,7 +76,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
       case 'warning':
         return 'text-yellow-800'
       case 'info':
-        return 'text-blue-800'
+        return 'text-gray-800'
       default:
         return 'text-gray-800'
     }
@@ -116,7 +116,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
 // Toast Container Component
 export const ToastContainer = ({ toasts = [], removeToast }) => {
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2 w-full max-w-md px-4 sm:px-0">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] space-y-2 w-full max-w-md px-4 sm:px-0">
       {toasts.map((toast) => (
         <Toast
           key={toast.id}
@@ -128,3 +128,6 @@ export const ToastContainer = ({ toasts = [], removeToast }) => {
     </div>
   )
 }
+
+// Default export
+export default Toast
