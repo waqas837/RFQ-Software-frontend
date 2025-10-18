@@ -440,7 +440,7 @@ const RFQs = ({ userRole }) => {
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Create New RFQ
               </button>
-              <button 
+              {/* <button 
                 onClick={handleAutoCreateRFQ}
                 disabled={actionLoading}
                 className={`flex items-center px-4 py-2 rounded-md border ${
@@ -451,7 +451,7 @@ const RFQs = ({ userRole }) => {
               >
                 <DocumentTextIcon className="h-5 w-5 mr-2" />
                 Auto RFQ Create
-              </button>
+              </button> */}
               <button 
                 onClick={() => setShowImportModal(true)}
                 disabled={actionLoading}
