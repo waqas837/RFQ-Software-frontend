@@ -17,11 +17,17 @@ const InvitationHandler = () => {
   const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
-    // Clear localStorage when coming from invitation
-    localStorage.clear()
-    
     if (token) {
-      validateInvitation();
+      // Check if user is already logged in
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        // User is already logged in, redirect directly to RFQ
+        validateInvitationAndRedirect();
+      } else {
+        // Clear localStorage when coming from invitation
+        localStorage.clear();
+        validateInvitation();
+      }
     } else {
       setMessage({
         type: 'error',
@@ -30,6 +36,35 @@ const InvitationHandler = () => {
       setLoading(false);
     }
   }, [token]);
+
+  const validateInvitationAndRedirect = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/supplier-invitation/validate?token=${token}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // User is already logged in, redirect directly to RFQ
+        navigate(`/rfqs/${data.data.rfq.id}`, {
+          state: { 
+            message: 'Welcome! You can now submit your bid for this RFQ.',
+            invitation: data.data
+          }
+        });
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.message || 'Invalid or expired invitation'
+        });
+        setLoading(false);
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to validate invitation. Please try again.'
+      });
+      setLoading(false);
+    }
+  };
 
   const validateInvitation = async () => {
     try {

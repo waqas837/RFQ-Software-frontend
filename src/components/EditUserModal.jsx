@@ -26,7 +26,7 @@ const EditUserModal = ({ isOpen, onClose, onUserUpdated, user }) => {
         phone: user.phone || '',
         position: user.position || '',
         role: user.role || '',
-        is_active: user.status === 'Active' || user.is_active === true
+        is_active: user.is_active === true || user.status === 'Active'
       })
     }
   }, [user, isOpen])
@@ -92,7 +92,15 @@ const EditUserModal = ({ isOpen, onClose, onUserUpdated, user }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    console.log('EditUserModal - Form data being sent:', formData)
+    // Convert is_active string to boolean, keep original value if not changed
+    const submitData = {
+      ...formData,
+      is_active: formData.is_active === 'true' || formData.is_active === true ? true : 
+                 formData.is_active === 'false' || formData.is_active === false ? false : 
+                 user.is_active
+    }
+    
+    console.log('EditUserModal - Form data being sent:', submitData)
     
     if (!validateForm()) {
       return
@@ -101,8 +109,8 @@ const EditUserModal = ({ isOpen, onClose, onUserUpdated, user }) => {
     setLoading(true)
     
     try {
-      console.log('EditUserModal - Calling API with:', { id: user.id, data: formData })
-      const response = await usersAPI.update(user.id, formData)
+      console.log('EditUserModal - Calling API with:', { id: user.id, data: submitData })
+      const response = await usersAPI.update(user.id, submitData)
       console.log('EditUserModal - API response:', response)
       
       if (response.success) {

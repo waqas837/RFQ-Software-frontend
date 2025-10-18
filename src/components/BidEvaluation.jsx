@@ -70,6 +70,9 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
       const response = await bidsAPI.getAll({ rfq_id: rfqId })
       if (response.success) {
         setBids(response.data?.data || [])
+      } else {
+        console.error('Bids API failed:', response.message)
+        showToast(response.message || 'Failed to load bids', 'error')
       }
     } catch (error) {
       console.error('Error loading bids:', error)
@@ -276,7 +279,16 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Bid Evaluation</h3>
         
         {bids.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No bids submitted for this RFQ yet.</p>
+          <div className="text-center py-8">
+            <p className="text-gray-500">No bids submitted for this RFQ yet.</p>
+            <p className="text-xs text-gray-400 mt-2">RFQ ID: {rfqId}</p>
+            <button 
+              onClick={loadBids}
+              className="mt-3 px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+            >
+              🔄 Refresh Bids
+            </button>
+          </div>
         ) : (
           <div className="space-y-6">
             {bids.map((bid) => (
@@ -299,7 +311,7 @@ const BidEvaluation = ({ rfqId, rfq, currencySymbols, onAward }) => {
                       </div>
                       <div className="flex items-center">
                         <CalendarIcon className="w-4 h-4 mr-2" />
-                        <span>Delivery: {bid.proposed_delivery_date ? new Date(bid.proposed_delivery_date).toLocaleDateString() : 'N/A'}</span>
+                        <span>Delivery: {bid.delivery_time ? `${bid.delivery_time} days` : 'N/A'}</span>
                       </div>
                       <div className="flex items-center">
                         <UserIcon className="w-4 h-4 mr-2" />

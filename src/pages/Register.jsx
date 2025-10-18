@@ -74,6 +74,14 @@ const Register = () => {
       if (!formData.company_name.trim()) newErrors.company_name = 'Company name is required'
       if (!formData.company_email.trim()) newErrors.company_email = 'Company email is required'
       else if (!/\S+@\S+\.\S+/.test(formData.company_email)) newErrors.company_email = 'Company email is invalid'
+      if (!formData.company_website.trim()) newErrors.company_website = 'Company website is required'
+      else if (!/^https?:\/\/.+/.test(formData.company_website)) newErrors.company_website = 'Please enter a valid website URL (starting with http:// or https://)'
+      if (!formData.company_city.trim()) newErrors.company_city = 'City is required'
+      if (!formData.company_state.trim()) newErrors.company_state = 'State/Province is required'
+      if (!formData.company_country.trim()) newErrors.company_country = 'Country is required'
+      if (!formData.company_postal_code.trim()) newErrors.company_postal_code = 'Postal code is required'
+      if (!formData.company_registration_number.trim()) newErrors.company_registration_number = 'Registration number is required'
+      if (!formData.company_tax_id.trim()) newErrors.company_tax_id = 'Tax ID is required'
     }
     
     if (currentStep === 3) {
@@ -382,7 +390,7 @@ const Register = () => {
 
         <div>
           <label htmlFor="company_website" className="block text-sm font-medium text-gray-700">
-            Company Website
+            Company Website *
           </label>
           <div className="mt-1">
             <input
@@ -391,9 +399,14 @@ const Register = () => {
               type="url"
               value={formData.company_website}
               onChange={handleInputChange}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
+              className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 ${
+                errors.company_website ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="https://example.com"
             />
+            {errors.company_website && (
+              <p className="mt-1 text-sm text-red-600">{errors.company_website}</p>
+            )}
           </div>
         </div>
       </div>
@@ -418,7 +431,7 @@ const Register = () => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="company_city" className="block text-sm font-medium text-gray-700">
-            City
+            City *
           </label>
           <div className="mt-1">
             <input
@@ -427,15 +440,20 @@ const Register = () => {
               type="text"
               value={formData.company_city}
               onChange={handleInputChange}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
+              className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 ${
+                errors.company_city ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter city"
             />
+            {errors.company_city && (
+              <p className="mt-1 text-sm text-red-600">{errors.company_city}</p>
+            )}
           </div>
         </div>
 
         <div>
           <label htmlFor="company_state" className="block text-sm font-medium text-gray-700">
-            State/Province
+            State/Province *
           </label>
           <div className="mt-1">
             <input
@@ -444,9 +462,14 @@ const Register = () => {
               type="text"
               value={formData.company_state}
               onChange={handleInputChange}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
+              className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 ${
+                errors.company_state ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter state/province"
             />
+            {errors.company_state && (
+              <p className="mt-1 text-sm text-red-600">{errors.company_state}</p>
+            )}
           </div>
         </div>
       </div>
@@ -454,7 +477,7 @@ const Register = () => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="company_country" className="block text-sm font-medium text-gray-700">
-            Country
+            Country *
           </label>
           <div className="mt-1">
             <input
@@ -463,15 +486,20 @@ const Register = () => {
               type="text"
               value={formData.company_country}
               onChange={handleInputChange}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
+              className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 ${
+                errors.company_country ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter country"
             />
+            {errors.company_country && (
+              <p className="mt-1 text-sm text-red-600">{errors.company_country}</p>
+            )}
           </div>
         </div>
 
         <div>
           <label htmlFor="company_postal_code" className="block text-sm font-medium text-gray-700">
-            Postal Code
+            Postal Code *
           </label>
           <div className="mt-1">
             <input
@@ -480,9 +508,14 @@ const Register = () => {
               type="text"
               value={formData.company_postal_code}
               onChange={handleInputChange}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
+              className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 ${
+                errors.company_postal_code ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter postal code"
             />
+            {errors.company_postal_code && (
+              <p className="mt-1 text-sm text-red-600">{errors.company_postal_code}</p>
+            )}
           </div>
         </div>
       </div>
@@ -490,7 +523,7 @@ const Register = () => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="company_registration_number" className="block text-sm font-medium text-gray-700">
-            Registration Number
+            Registration Number *
           </label>
           <div className="mt-1">
             <input
@@ -499,15 +532,20 @@ const Register = () => {
               type="text"
               value={formData.company_registration_number}
               onChange={handleInputChange}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
+              className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 ${
+                errors.company_registration_number ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter registration number"
             />
+            {errors.company_registration_number && (
+              <p className="mt-1 text-sm text-red-600">{errors.company_registration_number}</p>
+            )}
           </div>
         </div>
 
         <div>
           <label htmlFor="company_tax_id" className="block text-sm font-medium text-gray-700">
-            Tax ID
+            Tax ID *
           </label>
           <div className="mt-1">
             <input
@@ -516,9 +554,14 @@ const Register = () => {
               type="text"
               value={formData.company_tax_id}
               onChange={handleInputChange}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
+              className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500 ${
+                errors.company_tax_id ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="Enter tax ID"
             />
+            {errors.company_tax_id && (
+              <p className="mt-1 text-sm text-red-600">{errors.company_tax_id}</p>
+            )}
           </div>
         </div>
       </div>
@@ -604,13 +647,13 @@ const Register = () => {
         </div>
         
         {formData.role === 'supplier' && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
             <div className="flex">
-              <ExclamationCircleIcon className="h-5 w-5 text-blue-400" />
+              <CheckCircleIcon className="h-5 w-5 text-green-400" />
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">Supplier Registration Notice</h3>
-                <div className="mt-2 text-sm text-blue-700">
-                  <p>As a supplier, your account will require admin approval before activation. You will be notified via email once your account is approved.</p>
+                <h3 className="text-sm font-medium text-green-800">Supplier Registration</h3>
+                <div className="mt-2 text-sm text-green-700">
+                  <p>Your supplier account will be activated immediately after email verification. No admin approval required.</p>
                 </div>
               </div>
             </div>

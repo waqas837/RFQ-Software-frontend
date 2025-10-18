@@ -4,23 +4,16 @@ export const API_BASE_URL = 'https://api.furnitrack.com/api'
 
 // Helper functions
 const getAuthToken = () => {
-  const token = localStorage.getItem('authToken')
-  console.log('Getting auth token:', token)
-  console.log('Token exists:', !!token)
-  console.log('Token length:', token ? token.length : 0)
-  console.log('All localStorage keys:', Object.keys(localStorage))
-  return token
+  return localStorage.getItem('authToken')
 }
 
 const getAuthHeaders = () => {
   const token = getAuthToken()
-  const headers = {
+  return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`,
     'Accept': 'application/json',
   }
-  console.log('API Headers:', headers)
-  return headers
 }
 
 export const apiRequest = async (endpoint, options = {}) => {
@@ -31,23 +24,12 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...options,
     }
 
-    console.log('Making API request to:', url)
-    console.log('With config:', config)
-    console.log('Authorization header:', config.headers.Authorization)
-
     const response = await fetch(url, config)
-    
-    console.log('Response status:', response.status)
-    console.log('Response headers:', response.headers)
-    
     const data = await response.json()
-    console.log('API Response:', data)
 
-    // Return the data as-is, let the calling code handle success/error
     return data
   } catch (error) {
     console.error('API Request Error:', error)
-    console.error('Error details:', error.message)
     throw error
   }
 }
@@ -920,6 +902,10 @@ export const currencyAPI = {
     })
   },
   getCurrencySymbols: () => apiRequest('/currencies/symbols'),
+  convertNegotiationAmount: (data) => apiRequest('/currencies/convert-negotiation', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
   getExchangeRates: (params = {}) => {
     const queryParams = new URLSearchParams(params).toString()
     return apiRequest(`/currencies/rates${queryParams ? `?${queryParams}` : ''}`)
@@ -937,6 +923,27 @@ export const negotiationsAPI = {
     return apiRequest(`/negotiations?${queryString}`)
   },
   getById: (id) => apiRequest(`/negotiations/${id}`),
+  getNegotiation: (bidId) => {
+    // Check if negotiation exists for this bid by getting all negotiations and filtering
+    return apiRequest('/negotiations').then(response => {
+      if (response.success && response.data) {
+        const negotiation = response.data.data.find(n => n.bid_id == bidId)
+        if (negotiation) {
+          return { success: true, data: negotiation }
+        } else {
+          return { success: false, message: 'No negotiation found for this bid' }
+        }
+      }
+      return response
+    })
+  },
+  startNegotiation: (bidId, initialMessage = 'Let\'s discuss this bid') => apiRequest('/negotiations', {
+    method: 'POST',
+    body: JSON.stringify({
+      bid_id: bidId,
+      initial_message: initialMessage
+    })
+  }),
   create: (negotiationData) => apiRequest('/negotiations', {
     method: 'POST',
     body: JSON.stringify(negotiationData)

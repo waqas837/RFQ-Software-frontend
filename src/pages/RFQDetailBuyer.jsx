@@ -198,14 +198,14 @@ const RFQDetailBuyer = () => {
               <>
                 <button
                   onClick={() => navigate(`/rfqs/edit/${rfq.id}`)}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex items-center px-4 py-2 border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white"
                 >
                   <PencilIcon className="w-4 h-4 mr-2" />
                   Edit
                 </button>
                 <button
                   onClick={handleDeleteRfq}
-                  className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                 >
                   <TrashIcon className="w-4 h-4 mr-2" />
                   Delete

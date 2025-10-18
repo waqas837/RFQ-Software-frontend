@@ -231,6 +231,14 @@ const RFQDetail = ({ userRole }) => {
                   <DocumentTextIcon className="w-5 h-5 mr-2" />
                   Submit Bid
                 </button>
+              ) : rfq.status === 'draft' || rfq.status === 'published' ? (
+                <button
+                  disabled
+                  className="bg-blue-400 text-white px-6 py-2 rounded-lg cursor-not-allowed flex items-center"
+                >
+                  <ExclamationTriangleIcon className="w-5 h-5 mr-2" />
+                  Bidding Not Yet Open
+                </button>
               ) : (
                 <button
                   disabled
@@ -429,6 +437,16 @@ const RFQDetail = ({ userRole }) => {
                   >
                     Submit Bid
                   </button>
+                </div>
+              ) : rfq.status === 'draft' || rfq.status === 'published' ? (
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500 mr-2" />
+                    <span className="text-sm text-gray-700">Bidding Not Yet Open</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    This RFQ is not yet open for bidding. Please wait for the buyer to open bidding.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">

@@ -71,9 +71,10 @@ const PurchaseOrders = ({ userRole }) => {
 
   // Fetch purchase orders on component mount
   useEffect(() => {
+    console.log('PurchaseOrders component mounted with userRole:', userRole)
     fetchPurchaseOrders()
     fetchCurrencySymbols()
-  }, [])
+  }, [userRole])
 
   const fetchCurrencySymbols = async () => {
     try {
@@ -120,6 +121,7 @@ const PurchaseOrders = ({ userRole }) => {
     try {
       setLoading(true)
       console.log('Fetching purchase orders for user role:', userRole)
+      console.log('User data from localStorage:', localStorage.getItem('user'))
       
       const params = {
         page: page,
@@ -131,6 +133,9 @@ const PurchaseOrders = ({ userRole }) => {
       console.log('API params:', params)
       const response = await purchaseOrdersAPI.getAll(params)
       console.log('API response:', response)
+      console.log('API response success:', response.success)
+      console.log('API response data:', response.data)
+      console.log('API response message:', response.message)
       
       if (response.success) {
         console.log('POs found:', response.data.data?.length || 0)

@@ -78,10 +78,18 @@ const EmailVerification = () => {
           
           console.log('EmailVerification - Updated user data:', updatedUser)
         }
-      } else {
-        setStatus('error')
-        setMessage(response.message || 'Email verification failed.')
+        
+        // Redirect after successful email update
+        setTimeout(() => {
+          navigate('/profile')
+        }, 2000)
+        
+        return
       }
+      
+      // Only show error if both attempts fail
+      setStatus('error')
+      setMessage('Invalid or expired verification link. Please request a new verification email.')
     } catch (error) {
       console.error('Email verification error:', error)
       setStatus('error')

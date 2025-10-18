@@ -13,7 +13,7 @@ import {
   TruckIcon
 } from '@heroicons/react/24/outline'
 import { useToast, ToastContainer } from '../components/Toast'
-import { negotiationsAPI, purchaseOrdersAPI } from '../services/api'
+import { negotiationsAPI, purchaseOrdersAPI, currencyAPI } from '../services/api'
 // Removed Pusher import - using Server-Sent Events instead
 
 const NegotiationChat = ({ userRole }) => {
@@ -41,6 +41,7 @@ const NegotiationChat = ({ userRole }) => {
   })
   const [creatingPO, setCreatingPO] = useState(false)
   const [poCreated, setPoCreated] = useState(false)
+  const [currencySymbols, setCurrencySymbols] = useState({})
   const messagesEndRef = useRef(null)
   const { showToast, removeToast, toasts } = useToast()
 
@@ -48,6 +49,7 @@ const NegotiationChat = ({ userRole }) => {
     if (negotiationId) {
       fetchNegotiation()
       initializeWebSocket()
+      fetchCurrencySymbols()
     }
     
     return () => {
@@ -56,6 +58,22 @@ const NegotiationChat = ({ userRole }) => {
       }
     }
   }, [negotiationId])
+
+  const fetchCurrencySymbols = async () => {
+    try {
+      const response = await currencyAPI.getCurrencySymbols()
+      if (response.success) {
+        setCurrencySymbols(response.data)
+      }
+    } catch (error) {
+      console.error('Error fetching currency symbols:', error)
+    }
+  }
+
+  const formatCurrency = (amount, currency = negotiation?.rfq?.currency || 'USD') => {
+    const symbol = currencySymbols[currency]?.symbol || currency
+    return `${symbol} ${amount ? amount.toLocaleString() : '0'}`
+  }
 
   const initializeWebSocket = () => {
     // Smart polling system - only poll when user is active and chat is visible
@@ -653,7 +671,9 @@ const NegotiationChat = ({ userRole }) => {
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center space-x-3">
                                         <div className="w-10 h-10 bg-slate-500 rounded-full flex items-center justify-center">
-                                          <CurrencyDollarIcon className="w-5 h-5 text-slate-200" />
+                                          <span className="text-slate-200 font-bold text-lg">
+                                            {currencySymbols[negotiation?.rfq?.currency]?.symbol || negotiation?.rfq?.currency || '$'}
+                                          </span>
                                         </div>
                                         <div>
                                           <h3 className="font-semibold text-slate-800 text-lg">
@@ -679,11 +699,13 @@ const NegotiationChat = ({ userRole }) => {
                                         <div className="bg-white rounded-lg p-4 border border-slate-200">
                                           <div className="flex items-center space-x-2 mb-2">
                                             <div className="w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center">
-                                              <CurrencyDollarIcon className="w-4 h-4 text-slate-600" />
+                                              <span className="text-slate-600 font-bold text-sm">
+                                                {currencySymbols[negotiation?.rfq?.currency]?.symbol || negotiation?.rfq?.currency || '$'}
+                                              </span>
                                             </div>
                                             <span className="text-slate-600 font-medium text-sm">New Price</span>
                                           </div>
-                                          <div className="text-2xl font-bold text-slate-900">${message.offer_data.price}</div>
+                                          <div className="text-2xl font-bold text-slate-900">{formatCurrency(message.offer_data.price, negotiation?.rfq?.currency)}</div>
                                         </div>
                                       )}
                                       {message.offer_data.delivery && (
@@ -840,6 +862,23 @@ const NegotiationChat = ({ userRole }) => {
                       <span className="text-green-800 font-medium">Offer Accepted</span>
                     </div>
                     <p className="text-green-600 text-sm mt-1">This offer has been accepted and the negotiation is closed. {userRole === 'buyer' ? 'You can now proceed with the purchase order.' : 'The buyer will generate the purchase order.'}</p>
+                    {negotiation?.purchase_order_id && userRole === 'supplier' && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <DocumentTextIcon className="w-5 h-5 text-blue-500" />
+                          <span className="text-blue-800 font-medium">Purchase Order Created</span>
+                        </div>
+                        <p className="text-blue-600 text-sm mt-1">Purchase Order #{negotiation.purchase_order_id} has been created for this negotiation.</p>
+                        <div className="mt-2">
+                          <button
+                            onClick={() => navigate('/purchase-orders')}
+                            className="text-sm text-blue-600 hover:text-blue-800 underline"
+                          >
+                            View Purchase Orders →
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {userRole === 'buyer' && messages.length > 0 && messages[messages.length - 1]?.message_type === 'acceptance' && !poCreated && (
                       <div className="mt-3">
                       <button

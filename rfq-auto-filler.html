@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFQ Auto Filler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #28a745;
+        }
+        .warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .info {
+            background: #17a2b8;
+        }
+        .instructions {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 RFQ Auto Filler</h1>
+        
+        <div class="instructions">
+            <h3>📋 How to Use:</h3>
+            <ol>
+                <li>Open your RFQ creation page</li>
+                <li>Open browser console (F12)</li>
+                <li>Copy and paste the script below</li>
+                <li>Run the commands</li>
+            </ol>
+        </div>
+
+        <div class="code">
+            <h4>📝 Copy this script to console:</h4>
+            <pre id="scriptContent"></pre>
+        </div>
+
+        <div class="instructions">
+            <h3>🎯 Available Commands:</h3>
+            <ul>
+                <li><code>fillRFQForm()</code> - Fill form with unique test data</li>
+                <li><code>autoSubmitRFQ()</code> - Submit the form automatically</li>
+                <li><code>completeRFQAutoFill()</code> - Fill and auto-submit</li>
+                <li><code>generateUniqueData()</code> - Generate test data only</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h3>✨ Features:</h3>
+            <ul>
+                <li>✅ <strong>Unique data every time</strong> - Timestamps ensure uniqueness</li>
+                <li>✅ <strong>Random values</strong> - Different titles, budgets, currencies</li>
+                <li>✅ <strong>Auto-fills all fields</strong> - Title, description, budget, dates, items</li>
+                <li>✅ <strong>Test suppliers</strong> - Adds supplier email invitations</li>
+                <li>✅ <strong>Auto-submit</strong> - Can automatically submit the form</li>
+                <li>✅ <strong>Error handling</strong> - Shows what worked and what didn't</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h3>🔧 Quick Start:</h3>
+            <p>1. Go to your RFQ creation page</p>
+            <p>2. Open console (F12)</p>
+            <p>3. Paste the script</p>
+            <p>4. Type: <code>completeRFQAutoFill()</code></p>
+            <p>5. Watch it fill and submit automatically! 🎉</p>
+        </div>
+    </div>
+
+    <script>
+        // Load the RFQ Auto Filler script
+        fetch('/rfq-auto-filler.js')
+            .then(response => response.text())
+            .then(script => {
+                document.getElementById('scriptContent').textContent = script;
+            })
+            .catch(error => {
+                console.error('Error loading script:', error);
+                document.getElementById('scriptContent').textContent = 'Error loading script. Please check the file path.';
+            });
+    </script>
+</body>
+</html>

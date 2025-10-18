@@ -448,8 +448,8 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
         currency: data.currency || 'USD', // Ensure currency is set
         budget_min: parseFloat(data.budget_min),
         budget_max: parseFloat(data.budget_max),
-        delivery_deadline: data.delivery_deadline,
-        bidding_deadline: data.bidding_deadline,
+        delivery_deadline: typeof data.delivery_deadline === 'object' ? data.delivery_deadline.toLocaleDateString('en-CA') : data.delivery_deadline,
+        bidding_deadline: typeof data.bidding_deadline === 'object' ? data.bidding_deadline.toLocaleDateString('en-CA') : data.bidding_deadline,
         terms_conditions: data.terms_conditions || null,
         attachments: newFileUploads, // Only new file uploads
         existing_attachments: JSON.stringify(existingAttachments), // Existing attachments as JSON string
@@ -460,7 +460,10 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
       
       console.log('Final RFQ data being sent:', rfqData);
       console.log('Currency value:', data.currency, 'Type:', typeof data.currency);
-      console.log('Bidding deadline:', data.bidding_deadline, 'Delivery deadline:', data.delivery_deadline);
+      console.log('Bidding deadline:', data.bidding_deadline, 'Type:', typeof data.bidding_deadline, 'Date object:', new Date(data.bidding_deadline));
+      console.log('Delivery deadline:', data.delivery_deadline, 'Type:', typeof data.delivery_deadline, 'Date object:', new Date(data.delivery_deadline));
+      console.log('Current date:', new Date().toISOString().split('T')[0]);
+      console.log('Current time:', new Date().toISOString());
       await onSubmit(rfqData);
       showToast('RFQ created successfully!', 'success');
       onClose();
@@ -484,7 +487,16 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
       return selectedItems.length === 0;
     }
     if (currentStep === 4) {
-      return !watchedValues.currency || watchedValues.currency === '' || !watchedValues.budget_min || !watchedValues.budget_max || !watchedValues.bidding_deadline || !watchedValues.delivery_deadline;
+      const hasRequiredFields = !watchedValues.currency || watchedValues.currency === '' || !watchedValues.budget_min || !watchedValues.budget_max || !watchedValues.bidding_deadline || !watchedValues.delivery_deadline;
+      
+      // Check if bidding deadline is in the past
+      const biddingDate = watchedValues.bidding_deadline ? new Date(watchedValues.bidding_deadline) : null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      biddingDate?.setHours(0, 0, 0, 0);
+      const isBiddingDateValid = !biddingDate || biddingDate.getTime() >= today.getTime();
+      
+      return hasRequiredFields || !isBiddingDateValid;
     }
     // Steps 3, 5, and 6 are optional or review
     return false;
@@ -716,7 +728,10 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                                           : selected
                                       ))
                                     }}
-                                    className="w-16 ml-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                                    className="ml-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                                    style={{
+                                      width: `${Math.max(50, (selectedItems.find(selected => selected.id === item.id)?.quantity || 1).toString().length * 10 + 10)}px`
+                                    }}
                                   />
                                 </div>
                               )}
@@ -1112,6 +1127,43 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                     </div>
                     
                     {/* Real-time Date Validation Feedback */}
+                    {watchedValues.bidding_deadline && (
+                      <div className={`border rounded-md p-3 mb-3 ${
+                        (() => {
+                          const biddingDate = new Date(watchedValues.bidding_deadline);
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          biddingDate.setHours(0, 0, 0, 0);
+                          return biddingDate.getTime() >= today.getTime();
+                        })()
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-red-50 border-red-200'
+                      }`}>
+                        <p className={`text-sm font-medium ${
+                          (() => {
+                            const biddingDate = new Date(watchedValues.bidding_deadline);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            biddingDate.setHours(0, 0, 0, 0);
+                            return biddingDate.getTime() >= today.getTime();
+                          })()
+                            ? 'text-green-800'
+                            : 'text-red-800'
+                        }`}>
+                          {(() => {
+                            const biddingDate = new Date(watchedValues.bidding_deadline);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            biddingDate.setHours(0, 0, 0, 0);
+                            return biddingDate.getTime() >= today.getTime();
+                          })()
+                            ? '✅ Bidding deadline is valid (today or future)'
+                            : '❌ Bidding deadline must be today or in the future'
+                          }
+                        </p>
+                      </div>
+                    )}
+                    
                     {watchedValues.bidding_deadline && watchedValues.delivery_deadline && (
                       <div className={`border rounded-md p-3 ${
                         new Date(watchedValues.bidding_deadline) <= new Date(watchedValues.delivery_deadline)
@@ -1144,6 +1196,11 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
                     {errors.deadline_order && (
                       <div className="bg-red-50 border border-red-200 rounded-md p-3">
                         <p className="text-sm text-red-600">{errors.deadline_order.message}</p>
+                      </div>
+                    )}
+                    {errors.bidding_deadline_future && (
+                      <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                        <p className="text-sm text-red-600">{errors.bidding_deadline_future.message}</p>
                       </div>
                     )}
                     

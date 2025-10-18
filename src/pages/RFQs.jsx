@@ -99,6 +99,60 @@ const RFQs = ({ userRole }) => {
   }
 
 
+  const handleAutoCreateRFQ = async () => {
+    try {
+      setActionLoading(true)
+      showToast('Creating RFQ with test data...', 'info')
+      
+      // Generate unique test data
+      const timestamp = Date.now()
+      const random = Math.floor(Math.random() * 1000)
+      
+      const testData = {
+        title: `Auto Test RFQ ${timestamp}`,
+        description: 'This is an automatically generated RFQ for testing purposes. It includes all necessary fields and data.',
+        category_id: 1, // Default category
+        currency: ['USD', 'EUR', 'INR', 'GBP'][Math.floor(Math.random() * 4)],
+        budget_min: Math.floor(Math.random() * 5000) + 1000,
+        budget_max: Math.floor(Math.random() * 10000) + 5000,
+        bidding_deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        delivery_deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        terms_conditions: 'Standard terms and conditions apply. Payment terms: Net 30 days.',
+        items: [
+          {
+            item_id: 1, // Default item
+            quantity: Math.floor(Math.random() * 50) + 10,
+            specifications: [`Auto-generated specifications for test item ${timestamp}`],
+            custom_fields: null,
+            notes: `Test item notes - Batch ${timestamp}`
+          }
+        ],
+        attachments: [],
+        invited_emails: [`supplier${random}@test.com`, `supplier${random + 1}@test.com`],
+        invited_user_ids: []
+      }
+      
+      console.log('Creating RFQ with data:', testData)
+      
+      const response = await rfqsAPI.create(testData)
+      
+      if (response.success) {
+        showToast('RFQ created successfully!', 'success')
+        // Wait a moment then refresh
+        setTimeout(async () => {
+          await fetchRFQs()
+        }, 1000)
+      } else {
+        showToast('Failed to create RFQ: ' + response.message, 'error')
+      }
+    } catch (error) {
+      console.error('Auto create RFQ error:', error)
+      showToast('Error creating RFQ: ' + error.message, 'error')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   const handleFileImport = async (event) => {
     const file = event.target.files[0]
     if (!file) return
@@ -385,6 +439,18 @@ const RFQs = ({ userRole }) => {
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Create New RFQ
+              </button>
+              <button 
+                onClick={handleAutoCreateRFQ}
+                disabled={actionLoading}
+                className={`flex items-center px-4 py-2 rounded-md border ${
+                  actionLoading 
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' 
+                    : 'bg-green-600 text-white border-green-600 hover:bg-green-700 hover:border-green-700'
+                }`}
+              >
+                <DocumentTextIcon className="h-5 w-5 mr-2" />
+                Auto RFQ Create
               </button>
               <button 
                 onClick={() => setShowImportModal(true)}
