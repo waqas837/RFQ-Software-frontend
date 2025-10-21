@@ -187,8 +187,18 @@ const RFQs = ({ userRole }) => {
       const response = await rfqsAPI.import(file)
       
       if (response.success) {
-        showToast('RFQs imported successfully!', 'success')
-        await fetchRFQs() // Refresh the list
+        const importedCount = response.data?.imported_count || 0
+        if (importedCount > 0) {
+          showToast(`Successfully imported ${importedCount} RFQ(s)!`, 'success')
+          await fetchRFQs() // Refresh the list
+        } else {
+          const errors = response.data?.errors || []
+          if (errors.length > 0) {
+            showToast(`Import failed: ${errors[0]}`, 'error')
+          } else {
+            showToast('No RFQs were imported. Please check your file format.', 'warning')
+          }
+        }
       } else {
         showToast('Import failed: ' + response.message, 'error')
       }
@@ -739,8 +749,8 @@ const RFQs = ({ userRole }) => {
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-white/20 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-6 border w-11/12 md:w-4/5 lg:w-3/5 shadow-lg rounded-xl bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Import RFQs from Excel</h3>
@@ -800,7 +810,7 @@ const RFQs = ({ userRole }) => {
               <div className="flex justify-between items-center">
                 <div className="flex space-x-2">
                   <a
-                    href={`${API_BASE_URL}/rfqs/template/csv`}
+                    href={`${API_BASE_URL}/rfqs/template/csv?v=${Date.now()}`}
                     download="rfq_template.csv"
                     className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   >
@@ -808,7 +818,7 @@ const RFQs = ({ userRole }) => {
                     Download CSV Template
                   </a>
                   <a
-                    href={`${API_BASE_URL}/rfqs/template/xlsx`}
+                    href={`${API_BASE_URL}/rfqs/template/xlsx?v=${Date.now()}`}
                     download="rfq_template.xlsx"
                     className="flex items-center px-4 py-2 rounded-md border bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   >
@@ -829,7 +839,7 @@ const RFQs = ({ userRole }) => {
                       setShowImportModal(false)
                       document.getElementById('import-file').click()
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800"
                   >
                     Choose File
                   </button>

@@ -70,7 +70,20 @@ export const authAPI = {
       },
       body: JSON.stringify(userData),
     })
-    return response.json()
+    
+    const data = await response.json()
+    
+    if (!response.ok) {
+      // Handle validation errors
+      if (response.status === 422 && data.errors) {
+        const errorMessages = Object.values(data.errors).flat().join(', ')
+        throw new Error(errorMessages)
+      }
+      // Handle other errors (like duplicate email)
+      throw new Error(data.message || 'Registration failed')
+    }
+    
+    return data
   },
 
   logout: async () => {

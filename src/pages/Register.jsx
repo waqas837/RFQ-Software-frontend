@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EyeIcon, EyeSlashIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 import { authAPI } from '../services/api'
+import { useToast, ToastContainer } from '../components/Toast'
 
 const Register = () => {
   const navigate = useNavigate()
@@ -10,6 +11,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  const { showToast, removeToast, toasts } = useToast()
   
   const [formData, setFormData] = useState({
     // User information
@@ -92,8 +94,25 @@ const Register = () => {
     return Object.keys(newErrors).length === 0
   }
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (validateStep(step)) {
+      // If moving from step 1 to step 2, check if email already exists
+      if (step === 1) {
+        try {
+          setLoading(true)
+          const response = await authAPI.checkStatus(formData.email)
+          
+          if (response.success) {
+            showToast('This email is already registered. Please use a different email or try logging in.', 'error')
+            return
+          }
+        } catch (error) {
+          console.error('Email check error:', error)
+        } finally {
+          setLoading(false)
+        }
+      }
+      
       setStep(step + 1)
     }
   }
@@ -314,8 +333,15 @@ const Register = () => {
         <button
           type="button"
           onClick={nextStep}
-          className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          disabled={loading}
+          className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 flex items-center"
         >
+          {loading && (
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          )}
           Next: Company Information
         </button>
       </div>
@@ -880,6 +906,7 @@ const Register = () => {
           </div>
         </div>
       </div>
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   )
 }
