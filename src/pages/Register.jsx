@@ -102,12 +102,13 @@ const Register = () => {
           setLoading(true)
           const response = await authAPI.checkStatus(formData.email)
           
-          if (response.success) {
+          if (response.email_exists) {
             showToast('This email is already registered. Please use a different email or try logging in.', 'error')
             return
           }
         } catch (error) {
           console.error('Email check error:', error)
+          showToast('An error occurred while checking email availability. Please try again.', 'error')
         } finally {
           setLoading(false)
         }
