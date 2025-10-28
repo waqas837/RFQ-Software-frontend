@@ -62,9 +62,13 @@ const Login = () => {
         navigate('/dashboard')
       }
     } catch (error) {
+      // Check if user account doesn't exist
+      if (error.message && error.message.includes('No account found')) {
+        setError('This email is not registered. Please sign up first.')
+      }
       // Handle email verification error specifically
-      if (error.message && (error.message.includes('verify your email') || error.message.includes('email address'))) {
-        // Automatically send verification email
+      else if (error.message && (error.message.includes('verify your email') || error.message.includes('email address'))) {
+        // User exists but email not verified - automatically send verification email
         try {
           console.log('Sending verification email to:', formData.email)
           await authAPI.resendVerification(formData.email)
