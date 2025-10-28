@@ -132,7 +132,6 @@ const RFQs = ({ userRole }) => {
         invited_user_ids: []
       }
       
-      console.log('Creating RFQ with data:', testData)
       
       const response = await rfqsAPI.create(testData)
       

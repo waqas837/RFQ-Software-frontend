@@ -121,7 +121,6 @@ const PurchaseOrders = ({ userRole }) => {
     try {
       setLoading(true)
       console.log('Fetching purchase orders for user role:', userRole)
-      console.log('User data from localStorage:', localStorage.getItem('user'))
       
       const params = {
         page: page,
@@ -130,15 +129,9 @@ const PurchaseOrders = ({ userRole }) => {
       if (searchTerm) params.search = searchTerm
       if (selectedStatus !== 'all') params.status = selectedStatus
       
-      console.log('API params:', params)
       const response = await purchaseOrdersAPI.getAll(params)
-      console.log('API response:', response)
-      console.log('API response success:', response.success)
-      console.log('API response data:', response.data)
-      console.log('API response message:', response.message)
       
       if (response.success) {
-        console.log('POs found:', response.data.data?.length || 0)
         setPurchaseOrders(response.data.data || [])
         setTotalPages(response.data?.last_page || 1)
         setTotalItems(response.data?.total || 0)

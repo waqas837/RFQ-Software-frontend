@@ -59,7 +59,6 @@ const Companies = () => {
       setLoading(true)
       const response = await companiesAPI.getAll()
       
-      console.log('API Response:', response)
       
       // Handle different response structures
       let companiesData = []
@@ -74,7 +73,6 @@ const Companies = () => {
         companiesData = []
       }
       
-      console.log('Processed companies data:', companiesData)
       setCompanies(companiesData)
     } catch (error) {
       console.error('Error loading companies:', error)
@@ -130,19 +128,12 @@ const Companies = () => {
     setLoading(true)
     
     try {
-      console.log('Submitting form data:', formData)
-      console.log('Editing company:', editingCompany)
-      
       if (editingCompany) {
         // Update existing company
-        console.log('Updating company with ID:', editingCompany.id)
         const response = await companiesAPI.update(editingCompany.id, formData)
-        console.log('Update response:', response)
       } else {
         // Create new company
-        console.log('Creating new company')
         const response = await companiesAPI.create(formData)
-        console.log('Create response:', response)
       }
       
       // Reload companies to get updated data
@@ -188,9 +179,7 @@ const Companies = () => {
     
     setLoading(true)
     try {
-      console.log('Deleting company with ID:', deletingCompany.id)
       const response = await companiesAPI.delete(deletingCompany.id)
-      console.log('Delete response:', response)
       
       // Reload companies to get updated data
       await loadCompanies()

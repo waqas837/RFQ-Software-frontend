@@ -191,13 +191,6 @@ const NegotiationChat = ({ userRole }) => {
     const hasMessage = newMessage.trim()
     const hasCounterOfferData = messageType === 'counter_offer' && (offerData.price || offerData.delivery)
     
-    console.log('Send message debug:', {
-      hasMessage,
-      hasCounterOfferData,
-      messageType,
-      offerData,
-      sending
-    })
     
     if ((!hasMessage && !hasCounterOfferData) || sending) {
       console.log('Message send blocked:', { hasMessage, hasCounterOfferData, sending })
@@ -747,17 +740,7 @@ const NegotiationChat = ({ userRole }) => {
                                     )}
                                     
                                     {/* Withdraw button for sent counter offers */}
-                                    {(() => {
-                                      // Debug logging
-                                      if (isOwn && message.message_type === 'counter_offer') {
-                                        console.log('Message debug:', {
-                                          messageId: message.id,
-                                          offer_status: message.offer_status,
-                                          shouldShowButton: message.offer_status !== 'accepted' && message.offer_status !== 'rejected' && message.offer_status !== 'cancelled'
-                                        });
-                                      }
-                                      return isOwn && message.message_type === 'counter_offer' && message.offer_status !== 'accepted' && message.offer_status !== 'rejected' && message.offer_status !== 'cancelled';
-                                    })() && (
+                                    {isOwn && message.message_type === 'counter_offer' && message.offer_status !== 'accepted' && message.offer_status !== 'rejected' && message.offer_status !== 'cancelled' && (
                                       <div className="mt-6 flex space-x-3 justify-end">
                                         <button
                                           onClick={() => {

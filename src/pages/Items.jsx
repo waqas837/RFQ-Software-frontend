@@ -28,7 +28,6 @@ const Items = () => {
     try {
       setLoading(true)
       const response = await itemsAPI.getAll({ include: 'attachments' })
-      console.log('Items API response:', response) // Debug log
       
       if (response.success) {
         // Handle paginated response structure: response.data.data
@@ -80,7 +79,6 @@ const Items = () => {
   }
 
   const handleDeleteItem = (item) => {
-    console.log('Item to delete:', item) // Debug log
     if (!item || !item.id) {
       showToast('Invalid item selected for deletion', 'error')
       return
@@ -99,7 +97,6 @@ const Items = () => {
 
     try {
       setActionLoading(true)
-      console.log('Deleting item with ID:', itemToDelete.id) // Debug log
       const response = await itemsAPI.delete(itemToDelete.id)
       if (response.success) {
         showToast('Item deleted successfully!', 'success')

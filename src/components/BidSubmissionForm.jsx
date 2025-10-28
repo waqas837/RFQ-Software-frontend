@@ -55,11 +55,7 @@ const BidSubmissionForm = () => {
         setRfq(response.data)
         
         // Initialize form data with RFQ items
-        console.log('RFQ Data:', response.data); // Debug log
         const items = response.data.items?.map(item => {
-          console.log('RFQ Item:', item); // Debug log
-          console.log('Item ID:', item.id, 'Item ID Type:', typeof item.id); // Debug log
-          console.log('Original Item ID:', item.item_id); // Debug log
           
           // Use the RFQ item ID (item.id) not the original item ID (item.item_id)
           return {
@@ -173,9 +169,6 @@ const BidSubmissionForm = () => {
         }))
       }
 
-      console.log('Bid Data:', bidData); // Debug log
-      console.log('Items being sent:', bidData.items); // Debug log
-      console.log('Item IDs being sent:', bidData.items.map(item => item.item_id)); // Debug log
 
       // First create/update the bid
       const response = await bidsAPI.create(bidData)

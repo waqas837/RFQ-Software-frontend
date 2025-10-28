@@ -411,7 +411,6 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
   }
 
   const handleFormSubmit = async (data) => {
-    console.log('Form submitted with data:', data);
     console.log('Selected items:', selectedItems);
     
     // Check if items are selected
@@ -458,12 +457,6 @@ const RFQWizard = ({ isOpen, onClose, onSubmit, initialData = null, loading = fa
         invited_user_ids: invitedUserIds
       }
       
-      console.log('Final RFQ data being sent:', rfqData);
-      console.log('Currency value:', data.currency, 'Type:', typeof data.currency);
-      console.log('Bidding deadline:', data.bidding_deadline, 'Type:', typeof data.bidding_deadline, 'Date object:', new Date(data.bidding_deadline));
-      console.log('Delivery deadline:', data.delivery_deadline, 'Type:', typeof data.delivery_deadline, 'Date object:', new Date(data.delivery_deadline));
-      console.log('Current date:', new Date().toISOString().split('T')[0]);
-      console.log('Current time:', new Date().toISOString());
       await onSubmit(rfqData);
       showToast('RFQ created successfully!', 'success');
       onClose();
