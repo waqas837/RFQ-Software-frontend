@@ -24,6 +24,7 @@ const Login = () => {
     }
   }, [searchParams])
 
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -61,7 +62,25 @@ const Login = () => {
         navigate('/dashboard')
       }
     } catch (error) {
-      setError(error.message || 'Login failed. Please check your credentials.')
+      // Handle email verification error specifically
+      if (error.message && (error.message.includes('verify your email') || error.message.includes('email address'))) {
+        // Automatically send verification email
+        try {
+          console.log('Sending verification email to:', formData.email)
+          await authAPI.resendVerification(formData.email)
+          console.log('Verification email sent successfully')
+          setError('Please check your email and Verify your email before logging in. A new verification email has been sent to your inbox.')
+        } catch (resendError) {
+          console.error('Failed to send verification email:', resendError)
+          if (resendError.message.includes('Too Many Attempts') || resendError.message.includes('429')) {
+            setError('Please check your email and Verify your email before logging in. (Rate limit reached - please wait a moment before trying again)')
+          } else {
+            setError('Please check your email and Verify your email before logging in.')
+          }
+        }
+      } else {
+        setError(error.message || 'Login failed. Please check your credentials.')
+      }
       setFieldErrors({})
     } finally {
       setLoading(false)
@@ -159,7 +178,13 @@ const Login = () => {
                 autoComplete="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value })
+                  // Clear error when user starts typing
+                  if (error) {
+                    setError('')
+                  }
+                }}
                   className={`w-full px-4 py-3 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors ${
                     fieldErrors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   }`}

@@ -122,7 +122,14 @@ export const authAPI = {
       },
       body: JSON.stringify({ email }),
     })
-    return response.json()
+    
+    const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to resend verification email')
+    }
+    
+    return data
   },
 
   forgotPassword: async (email) => {
